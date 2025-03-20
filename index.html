@@ -1,75 +1,266 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Map of KFC and Taco Bell Locations</title>
-    <script>
-        function loadScript() {
-            const apiKey = 'AIzaSyC22pA3TyLyANxJwEQEaugsbVtTHm5iBdM'; // Ensure this API key is valid
-            const script = document.createElement('script');
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
-            script.async = true;
-            script.defer = true;
-            script.onerror = function() {
-                console.error('Google Maps script failed to load. Check API key and network connection.');
-                alert('Failed to load Google Maps. Please check the API key or internet connection.');
-            };
-            document.head.appendChild(script);
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KFC Locations Map</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f8f8f8;
         }
-
+        .header {
+            background-color: #072A4D;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: relative;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: #ED6B00;
+        }
+        .map-container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        #map {
+            width: 100%;
+            height: 600px;
+            border-radius: 4px;
+        }
+        .footer {
+            text-align: center;
+            padding: 15px;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #ddd;
+            margin-top: 20px;
+        }
+        .info-window {
+            max-width: 250px;
+        }
+        .info-window h3 {
+            margin-top: 5px;
+            margin-bottom: 5px;
+            color: #072A4D;
+        }
+        .info-window p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>KFC Locations Map</h1>
+        <p>106 Locations across Australia</p>
+    </div>
+    
+    <div class="map-container">
+        <div id="map"></div>
+    </div>
+    
+    <div class="footer">
+        <p>KFC Locations Map | Australian Locations | Based on Excel Data</p>
+    </div>
+    
+    <script>
+        // KFC locations data without Bordeaux
+        const locations = [
+            {"Name":"KFC Acacia Ridge","Address":"1404 Beaudesert Rd, Acacia Ridge QLD 4110","Latitude":-27.587525,"Longitude":153.0274054},
+            {"Name":"KFC Albany Creek","Address":"770 Albany Creek Rd, Albany Creek QLD 4035","Latitude":-27.3453735,"Longitude":152.964313},
+            {"Name":"KFC Annandale","Address":"Shopping Centre, 103-107 MacArthur Dr, Annandale QLD 4814","Latitude":-19.3167581,"Longitude":146.7924434},
+            {"Name":"KFC Aspley","Address":"1371 Gympie Rd, Aspley QLD 4034","Latitude":-27.3651736,"Longitude":153.0150493},
+            {"Name":"KFC Banksia","Address":"2A Princes Hwy & Bonar Street, Banksia NSW 2216","Latitude":-33.9450001,"Longitude":151.1352785},
+            {"Name":"KFC Belmont","Address":"175 Great Eastern Hwy, Belmont WA 6104","Latitude":-31.9503611,"Longitude":115.9379709},
+            {"Name":"KFC Bennetts Green","Address":"16 Pacific Hwy, Bennetts Green NSW 2290","Latitude":-32.9626683,"Longitude":151.6678474},
+            {"Name":"KFC Bexley","Address":"516a Forest Rd, Bexley NSW 2207","Latitude":-33.9530487,"Longitude":151.1098193},
+            {"Name":"KFC Biggera Waters","Address":"5 Broadwater Ave, Biggera Waters QLD 4216","Latitude":-27.9095254,"Longitude":153.3996431},
+            {"Name":"KFC Blackwater","Address":"Blackwater Cooroorah Rd, Blackwater QLD 4717","Latitude":-23.584103,"Longitude":148.8837366},
+            {"Name":"KFC Bondi","Address":"76-80 Hall St, Bondi Beach NSW 2026","Latitude":-33.8879518,"Longitude":151.2754394},
+            {"Name":"KFC Booval","Address":"Brisbane Rd, Booval QLD 4304","Latitude":-27.6105992,"Longitude":152.7914551},
+            {"Name":"KFC Boronia Heights","Address":"101/131 Chambers Flat Rd, Boronia Heights QLD 4124","Latitude":-27.6849957,"Longitude":153.022429},
+            {"Name":"KFC Botany","Address":"1737 Botany Rd, Botany NSW 2019","Latitude":-33.9448853,"Longitude":151.1994387},
+            {"Name":"KFC Brighton Le Sands","Address":"Cnr Grand Pde & The Grand Pde, Brighton-Le-Sands NSW 2216","Latitude":-33.9625275,"Longitude":151.1530354},
+            {"Name":"KFC Brisbane Airport DT","Address":"Dryandra Rd, Brisbane Airport QLD 4008","Latitude":-27.3848457,"Longitude":153.1162102},
+            {"Name":"KFC Broadbeach","Address":"2623 Gold Coast Hwy, Broadbeach QLD 4218","Latitude":-28.0288851,"Longitude":153.4292623},
+            {"Name":"KFC Browns Plains","Address":"Shop L001, Grand Plaza Shopping Centre, 27-49 Browns Plains Rd, Browns Plains QLD 4118","Latitude":-27.6637055,"Longitude":153.0415809},
+            {"Name":"KFC Buderim","Address":"Buderim Central, 8-10 King St, Buderim QLD 4556","Latitude":-26.6826689,"Longitude":153.0488945},
+            {"Name":"KFC Bulleen","Address":"110 Manningham Rd, Bulleen VIC 3105","Latitude":-37.7653608,"Longitude":145.0857687},
+            {"Name":"KFC Bundamba","Address":"290 Brisbane Rd, Bundamba QLD 4304","Latitude":-27.611351,"Longitude":152.8143651},
+            {"Name":"KFC Burleigh Waters","Address":"83 Christine Ave, Burleigh Waters QLD 4220","Latitude":-28.1023881,"Longitude":153.4405984},
+            {"Name":"KFC Caboolture","Address":"110 King St, Caboolture QLD 4510","Latitude":-27.0859626,"Longitude":152.9653621},
+            {"Name":"KFC Caboolture South","Address":"131 Morayfield Rd, Caboolture South QLD 4510","Latitude":-27.0949764,"Longitude":152.9536592},
+            {"Name":"KFC Cairns Central","Address":"Cairns Central Shopping Centre, Shop 28, 1-21 McLeod St, Cairns City QLD 4870","Latitude":-16.9183534,"Longitude":145.7700421},
+            {"Name":"KFC Calamvale","Address":"Shop 1, Calamvale Marketplace, 662 Compton Rd, Calamvale QLD 4116","Latitude":-27.6273775,"Longitude":153.0528347},
+            {"Name":"KFC Caloundra","Address":"102 Bulcock St, Caloundra QLD 4551","Latitude":-26.8039266,"Longitude":153.1350376},
+            {"Name":"KFC Capalaba","Address":"Cnr Mt Cotton & Redland Bay Rds, Capalaba QLD 4157","Latitude":-27.5406066,"Longitude":153.1892612},
+            {"Name":"KFC Cardwell","Address":"Bruce Hwy, Cardwell QLD 4849","Latitude":-18.2639089,"Longitude":146.0224916},
+            {"Name":"KFC Carindale","Address":"1009/1151 Creek Rd, Carindale QLD 4152","Latitude":-27.501066,"Longitude":153.1026748},
+            {"Name":"KFC Carseldine","Address":"1737 Gympie Rd, Carseldine QLD 4034","Latitude":-27.3374654,"Longitude":153.0052273},
+            {"Name":"KFC Christies Beach","Address":"3/167 Beach Rd, Christies Beach SA 5165","Latitude":-35.1330489,"Longitude":138.4812889},
+            {"Name":"KFC Clayfield","Address":"566 Sandgate Rd, Clayfield QLD 4011","Latitude":-27.4151213,"Longitude":153.053082},
+            {"Name":"KFC Cleveland","Address":"70 Shore St, Cleveland QLD 4163","Latitude":-27.5286483,"Longitude":153.2728158},
+            {"Name":"KFC Curtin","Address":"30 Theodore St, Curtin ACT 2605","Latitude":-35.3215756,"Longitude":149.0826945},
+            {"Name":"KFC D'Aguilar Highway Caboolture","Address":"Beachmere Rd, Caboolture QLD 4510","Latitude":-27.081519,"Longitude":152.9671705},
+            {"Name":"KFC Deception Bay","Address":"10/68-80 Bailey Rd, Deception Bay QLD 4508","Latitude":-27.1910622,"Longitude":153.0314481},
+            {"Name":"KFC Drive Thru Inala","Address":"Cnr Poinsetta & Rosemary St, Inala QLD 4077","Latitude":-27.5987626,"Longitude":152.9680761},
+            {"Name":"KFC Dunsborough","Address":"Shop 1/173 Naturaliste Terrace, Dunsborough WA 6281","Latitude":-33.6178348,"Longitude":115.1052741},
+            {"Name":"KFC Emerald","Address":"Cnr Hospital Road & Clermont St, Emerald QLD 4720","Latitude":-23.522678,"Longitude":148.1540363},
+            {"Name":"KFC Everton Park","Address":"442 South Pine Rd, Everton Park QLD 4053","Latitude":-27.4016809,"Longitude":152.9865654},
+            {"Name":"KFC Fairfield","Address":"1/155 Fairfield Rd, Fairfield QLD 4103","Latitude":-27.5060747,"Longitude":153.0280158},
+            {"Name":"KFC Fortitude Valley","Address":"Shop BG 05, 179 Brunswick St, Fortitude Valley QLD 4006","Latitude":-27.4575089,"Longitude":153.0345429},
+            {"Name":"KFC Garden City","Address":"Garden City Shopping Centre, Shop R158, Westfield Garden City, Corner Logan, Kessels Rd, Upper Mt Gravatt QLD 4122","Latitude":-27.5629271,"Longitude":153.0815022},
+            {"Name":"KFC Gladstone Kin Kora","Address":"2 Col Brown Dr, Gladstone Central QLD 4680","Latitude":-23.8768061,"Longitude":151.2390212},
+            {"Name":"KFC Glass House Mountains","Address":"161 Bruce Hwy, Glass House Mountains QLD 4518","Latitude":-26.8915644,"Longitude":152.9517429},
+            {"Name":"KFC Greenacre","Address":"42 Roberts Rd, Greenacre NSW 2190","Latitude":-33.9036453,"Longitude":151.0627421},
+            {"Name":"KFC Greenslopes","Address":"730 Logan Rd, Greenslopes QLD 4120","Latitude":-27.5090486,"Longitude":153.0514089},
+            {"Name":"KFC Helensvale","Address":"Cnr Hope Island Rd & Gold Coast Hwy, Helensvale QLD 4212","Latitude":-27.9254089,"Longitude":153.3262401},
+            {"Name":"KFC Hillcrest","Address":"56-66 Mount Lindesay Hwy, Hillcrest QLD 4118","Latitude":-27.652652,"Longitude":153.0267242},
+            {"Name":"KFC Hungry Jacks Albany Creek","Address":"752 Albany Creek Rd, Albany Creek QLD 4035","Latitude":-27.3481598,"Longitude":152.9637731},
+            {"Name":"KFC Indooroopilly","Address":"Indooroopilly Shopping Centre, Shop 2041/322 Moggill Rd, Indooroopilly QLD 4068","Latitude":-27.4964941,"Longitude":152.9738069},
+            {"Name":"KFC Innisfail","Address":"Corner Glady & Fitzgerald Streets, Innisfail QLD 4860","Latitude":-17.5232387,"Longitude":146.0294358},
+            {"Name":"KFC Ipswich","Address":"232 Brisbane St, Ipswich QLD 4305","Latitude":-27.6162204,"Longitude":152.760778},
+            {"Name":"KFC Kallangur","Address":"1439 Anzac Ave, Kallangur QLD 4503","Latitude":-27.2490661,"Longitude":152.982873},
+            {"Name":"KFC Kedron","Address":"201 Gympie Rd, Kedron QLD 4031","Latitude":-27.410021,"Longitude":153.0273231},
+            {"Name":"KFC Keperra","Address":"673 Settlement Rd, Keperra QLD 4054","Latitude":-27.4176654,"Longitude":152.9453752},
+            {"Name":"KFC Kipparing","Address":"406 Elizabeth Ave, Kippa-Ring QLD 4021","Latitude":-27.2359972,"Longitude":153.0926968},
+            {"Name":"KFC Labrador","Address":"71 Olsen Ave, Labrador QLD 4215","Latitude":-27.9366429,"Longitude":153.3816158},
+            {"Name":"KFC Logan Hyperdome","Address":"Logan Hyperdome, Shop 6R, Pacific Hwy, Loganholme QLD 4129","Latitude":-27.6640728,"Longitude":153.1766203},
+            {"Name":"KFC Lutwyche","Address":"543 Lutwyche Rd, Lutwyche QLD 4030","Latitude":-27.4144908,"Longitude":153.0316326},
+            {"Name":"KFC Mackay North","Address":"Cnr Evans Avenue & Phillip St, Mackay QLD 4740","Latitude":-21.1276933,"Longitude":149.1723368},
+            {"Name":"KFC Marsden","Address":"Marsden Park Shopping Centre, Chambers Flat Rd, Marsden QLD 4132","Latitude":-27.6817627,"Longitude":153.0229788},
+            {"Name":"KFC Matraville","Address":"494 Bunnerong Rd, Matraville NSW 2036","Latitude":-33.9607266,"Longitude":151.2330033},
+            {"Name":"KFC McLaren Vale","Address":"232 Main Rd, McLaren Vale SA 5171","Latitude":-35.2200723,"Longitude":138.5388582},
+            {"Name":"KFC Meadowbrook","Address":"Shop 16, Logan Campus Shopping Centre, 68 University Dr, Meadowbrook QLD 4131","Latitude":-27.6374983,"Longitude":153.1345453},
+            {"Name":"KFC Morayfield","Address":"Shop 50/312 Morayfield Rd, Morayfield QLD 4506","Latitude":-27.1027359,"Longitude":152.9454683},
+            {"Name":"KFC Mornington","Address":"Mornington Village Mall, 241 Main St, Mornington VIC 3931","Latitude":-38.2178911,"Longitude":145.0363893},
+            {"Name":"KFC Mount Ommaney","Address":"171 Dandenong Rd, Mount Ommaney QLD 4074","Latitude":-27.5471896,"Longitude":152.9381358},
+            {"Name":"KFC Mt Sheridan","Address":"Mount Sheridan Plaza, 106 Barnard Dr, Mount Sheridan QLD 4868","Latitude":-17.0182522,"Longitude":145.7379508},
+            {"Name":"KFC Mundingburra","Address":"16 Bowen Rd, Mundingburra QLD 4812","Latitude":-19.2904697,"Longitude":146.7740842},
+            {"Name":"KFC Narangba","Address":"197-205 Young St, Narangba QLD 4504","Latitude":-27.2022911,"Longitude":152.9633835},
+            {"Name":"KFC Narre Warren","Address":"26 Princes Hwy, Narre Warren VIC 3805","Latitude":-38.0117577,"Longitude":145.308344},
+            {"Name":"KFC Nerang","Address":"Cnr White & Timor St, Nerang QLD 4211","Latitude":-27.9911889,"Longitude":153.3375945},
+            {"Name":"KFC New Farm","Address":"Cnr Brunswick & Sydney Sts, New Farm QLD 4005","Latitude":-27.4674788,"Longitude":153.0470352},
+            {"Name":"KFC Noosa","Address":"3 Lanyana Way, Noosa Heads QLD 4567","Latitude":-26.3997889,"Longitude":153.0921694},
+            {"Name":"KFC Noosaville","Address":"111 Eumundi - Noosa Rd Noosaville, QLD 4566","Latitude":-26.4173809,"Longitude":153.0578855},
+            {"Name":"KFC North Ipswich","Address":"Cnr Pine & Downs Sts, North Ipswich QLD 4305","Latitude":-27.6031702,"Longitude":152.7574431},
+            {"Name":"KFC North Lakes","Address":"4 North Lakes Dr, North Lakes QLD 4509","Latitude":-27.238851,"Longitude":153.0195799},
+            {"Name":"KFC Nundah","Address":"1259 Sandgate Rd, Nundah QLD 4012","Latitude":-27.3991583,"Longitude":153.0625799},
+            {"Name":"KFC Oporto Buderim","Address":"Buderim Central, Shop 12, King St & Burnett St, Buderim QLD 4556","Latitude":-26.6835859,"Longitude":153.0510798},
+            {"Name":"KFC Oxenford","Address":"104-108 Old Pacific Hwy, Oxenford QLD 4210","Latitude":-27.8988649,"Longitude":153.3143903},
+            {"Name":"KFC Pacific Fair","Address":"Shop 1274 Pacific Fair Shopping Centre, Hooker Blvd, Broadbeach Waters QLD 4218","Latitude":-28.0371407,"Longitude":153.4279087},
+            {"Name":"KFC Palm Beach","Address":"6-8 Fifth Ave, Palm Beach QLD 4221","Latitude":-28.1193349,"Longitude":153.4668933},
+            {"Name":"KFC Pimpama","Address":"Lot 1, 10 Dixon Dr, Pimpama QLD 4209","Latitude":-27.8297599,"Longitude":153.314599},
+            {"Name":"KFC Redbank Plains","Address":"Shop L01/583 Redbank Plains Rd, Redbank Plains QLD 4301","Latitude":-27.6541671,"Longitude":152.8634741},
+            {"Name":"KFC Robina","Address":"Robina Town Shopping Centre, Shop 5214/19 Robina Town Centre Dr, Robina QLD 4226","Latitude":-28.0760626,"Longitude":153.3810972},
+            {"Name":"KFC Roma","Address":"1 Northern Rd, Roma QLD 4455","Latitude":-26.557245,"Longitude":148.7819891},
+            {"Name":"KFC Sandgate","Address":"Cnr Lagoon Street & Rainbow St, Sandgate QLD 4017","Latitude":-27.3200499,"Longitude":153.0682911},
+            {"Name":"KFC Shepton","Address":"Unit 5/85-89 Old Northern Rd, Bray Park QLD 4500","Latitude":-27.2952665,"Longitude":152.9803975},
+            {"Name":"KFC Springfield","Address":"6/1 Main St, Springfield Lakes QLD 4300","Latitude":-27.6822649,"Longitude":152.9143742},
+            {"Name":"KFC Strathpine","Address":"Strathpine Shopping Centre, 295 Gympie Rd, Strathpine QLD 4500","Latitude":-27.3098659,"Longitude":152.988664},
+            {"Name":"KFC Taringa","Address":"18 Morrow St, Taringa QLD 4068","Latitude":-27.4955101,"Longitude":152.9824724},
+            {"Name":"KFC The Pines","Address":"The Pines Shopping Centre, 13/31 Smiths Rd, Buderim QLD 4556","Latitude":-26.6869913,"Longitude":153.0900639},
+            {"Name":"KFC Toowong","Address":"Toowong Village Shopping Centre, Shop FG00 Cnr Jephson St & Coronation Dr, Toowong QLD 4066","Latitude":-27.4856669,"Longitude":152.9910358},
+            {"Name":"KFC Toowoomba Westridge","Address":"Cnr Westridge Shopping Centre & West St, Toowoomba City QLD 4350","Latitude":-27.5695861,"Longitude":151.9428868},
+            {"Name":"KFC Townsville Willows","Address":"Cnr Thuringowa Central & Herveys Range Rd, Thuringowa Central QLD 4817","Latitude":-19.3055903,"Longitude":146.7294196},
+            {"Name":"KFC Tweed Mall","Address":"Cnr Wharf St & Bay St, Tweed Heads NSW 2485","Latitude":-28.1774962,"Longitude":153.5477195},
+            {"Name":"KFC Upper Coomera","Address":"2/2-6 Lakeview Terrace, Upper Coomera QLD 4209","Latitude":-28.0050889,"Longitude":153.3139626},
+            {"Name":"KFC Victoria Point","Address":"11/97-101 Colburn Ave, Victoria Point QLD 4165","Latitude":-27.5891262,"Longitude":153.2840748},
+            {"Name":"KFC Warriewood","Address":"Shop 1/12 Jacksons Rd, Warriewood NSW 2102","Latitude":-33.6941909,"Longitude":151.3028077},
+            {"Name":"KFC Waterford","Address":"Waterford Plaza, Shop 17/15-21 Loregan St, Waterford QLD 4133","Latitude":-27.697222,"Longitude":153.132222},
+            {"Name":"KFC Wynnum","Address":"Shop 3/69 Bay Terrace, Wynnum QLD 4178","Latitude":-27.4448404,"Longitude":153.1750711}
+        ];
+        
+        // Initialize Google Maps
         function initMap() {
-            if (typeof google === 'undefined' || !google.maps) {
-                console.error('Google Maps API failed to load.');
-                alert('Google Maps failed to load. Please check API key permissions.');
-                return;
-            }
-
-            var map = new google.maps.Map(document.getElementById('map'), {
-                zoom: 7,
-                center: { lat: -27.5, lng: 153.0 }
+            // Create map centered on Australia
+            const australia = { lat: -25.2744, lng: 133.7751 };
+            const map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 4,
+                center: australia,
+                mapTypeId: google.maps.MapTypeId.ROADMAP,
+                mapTypeControl: true,
+                streetViewControl: false,
+                fullscreenControl: true,
+                zoomControl: true
             });
-
-            var locations = [
-                { name: "KFC Acacia Ridge", lat: -27.587525, lng: 153.0274054 },
-                { name: "KFC Albany Creek", lat: -27.3453735, lng: 152.964313 },
-                { name: "KFC Annandale", lat: -19.3167581, lng: 146.7924434 },
-                { name: "KFC Annerley", lat: -27.5151205, lng: 153.0309705 },
-                { name: "KFC Arundel", lat: -27.9469922, lng: 153.3511197 },
-                { name: "KFC Ashmore", lat: -27.9736794, lng: 153.3788455 },
-                { name: "KFC Aspley", lat: -27.3614999, lng: 153.0167 },
-                { name: "KFC Beaudesert", lat: -27.9815315, lng: 152.9943974 },
-                { name: "KFC Beenleigh", lat: -27.7186694, lng: 153.1980352 },
-                { name: "KFC Benowa", lat: -28.0095456, lng: 153.3914765 },
-                { name: "KFC Berrinba", lat: -27.6761625, lng: 153.0794281 },
-                { name: "KFC Bethania", lat: -27.7012913, lng: 153.1581463 },
-                { name: "KFC Birkdale", lat: -27.495144, lng: 153.2123753 },
-                { name: "KFC Booval", lat: -27.6139858, lng: 152.7883949 },
-                { name: "KFC Brassall", lat: -27.5972907, lng: 152.7459002 },
-                { name: "KFC Browns Plains", lat: -27.662809, lng: 153.041267 },
-                { name: "KFC Bundamba", lat: -27.5882848, lng: 152.819894 },
-                { name: "KFC Burleigh", lat: -28.1006774, lng: 153.4360203 },
-                { name: "KFC Burpengary", lat: -27.1545908, lng: 152.9752478 },
-                { name: "Taco Bell Annerley", lat: -27.5147084, lng: 153.0309904 },
-                { name: "Taco Bell Beenleigh", lat: -27.7163846, lng: 153.2065469 },
-                { name: "Taco Bell Cleveland", lat: -27.5241674, lng: 153.2525786 },
-                { name: "Taco Bell Coomera South", lat: -27.8527498, lng: 153.3344335 },
-                { name: "Taco Bell Coorparoo", lat: -27.4967498, lng: 153.054188 },
-                { name: "Taco Bell East Ipswich", lat: -27.6128434, lng: 152.7806682 }
-            ];
-
-            locations.forEach(function(location) {
-                new google.maps.Marker({
-                    position: { lat: location.lat, lng: location.lng },
+            
+            // Create bounds to fit all markers
+            const bounds = new google.maps.LatLngBounds();
+            
+            // Create marker icon for KFC locations
+            const kfcIcon = {
+                url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+                scaledSize: new google.maps.Size(32, 32),
+                origin: new google.maps.Point(0, 0),
+                anchor: new google.maps.Point(16, 32)
+            };
+            
+            // Create info window (reused for each marker)
+            const infoWindow = new google.maps.InfoWindow();
+            
+            // Add markers for each KFC location
+            locations.forEach(location => {
+                const position = {
+                    lat: location.Latitude,
+                    lng: location.Longitude
+                };
+                
+                // Create marker
+                const marker = new google.maps.Marker({
+                    position: position,
                     map: map,
-                    title: location.name
+                    title: location.Name,
+                    icon: kfcIcon,
+                    animation: google.maps.Animation.DROP
+                });
+                
+                // Extend bounds to include this marker
+                bounds.extend(position);
+                
+                // Add click listener to show info window
+                marker.addListener("click", () => {
+                    const content = `
+                        <div class="info-window">
+                            <h3>${location.Name}</h3>
+                            <p>${location.Address}</p>
+                            <p><small>Lat: ${location.Latitude.toFixed(6)}, Lng: ${location.Longitude.toFixed(6)}</small></p>
+                        </div>
+                    `;
+                    
+                    infoWindow.setContent(content);
+                    infoWindow.open(map, marker);
                 });
             });
+            
+            // Fit map to show all markers
+            map.fitBounds(bounds);
+            
+            // Add a bit of padding to the bounds
+            const padding = {
+                top: 50,
+                right: 50,
+                bottom: 50,
+                left: 50
+            };
+            map.fitBounds(bounds, padding);
         }
-
-        window.initMap = initMap; // Ensure callback function is globally accessible
     </script>
-</head>
-<body onload="loadScript()">
-    <h1>Map of KFC and Taco Bell Locations</h1>
-    <div id="map" style="height: 600px; width: 100%;"></div>
+    
+    <!-- Load Google Maps API with your key -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC22pA3TyLyANxJwEQEaugsbVtTHm5iBdM&callback=initMap" async defer></script>
 </body>
 </html>
