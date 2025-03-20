@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Map of KFC and Taco Bell Locations</title>
+    <script>
+        function loadScript() {
+            const apiKey = 'AIzaSyC22pA3TyLyANxJwEQEaugsbVtTHm5iBdM'; // Ensure this API key is valid
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
+            script.async = true;
+            script.defer = true;
+            script.onerror = function() {
+                console.error('Google Maps script failed to load. Check API key and network connection.');
+                alert('Failed to load Google Maps. Please check the API key or internet connection.');
+            };
+            document.head.appendChild(script);
+        }
+
+        function initMap() {
+            if (typeof google === 'undefined' || !google.maps) {
+                console.error('Google Maps API failed to load.');
+                alert('Google Maps failed to load. Please check API key permissions.');
+                return;
+            }
+
+            var map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 7,
+                center: { lat: -27.5, lng: 153.0 }
+            });
+
+            var locations = [
+                { name: "KFC Acacia Ridge", lat: -27.587525, lng: 153.0274054 },
+                { name: "KFC Albany Creek", lat: -27.3453735, lng: 152.964313 },
+                { name: "KFC Annandale", lat: -19.3167581, lng: 146.7924434 },
+                { name: "KFC Annerley", lat: -27.5151205, lng: 153.0309705 },
+                { name: "KFC Arundel", lat: -27.9469922, lng: 153.3511197 },
+                { name: "KFC Ashmore", lat: -27.9736794, lng: 153.3788455 },
+                { name: "KFC Aspley", lat: -27.3614999, lng: 153.0167 },
+                { name: "KFC Beaudesert", lat: -27.9815315, lng: 152.9943974 },
+                { name: "KFC Beenleigh", lat: -27.7186694, lng: 153.1980352 },
+                { name: "KFC Benowa", lat: -28.0095456, lng: 153.3914765 },
+                { name: "KFC Berrinba", lat: -27.6761625, lng: 153.0794281 },
+                { name: "KFC Bethania", lat: -27.7012913, lng: 153.1581463 },
+                { name: "KFC Birkdale", lat: -27.495144, lng: 153.2123753 },
+                { name: "KFC Booval", lat: -27.6139858, lng: 152.7883949 },
+                { name: "Taco Bell Annerley", lat: -27.5147084, lng: 153.0309904 },
+                { name: "Taco Bell Beenleigh", lat: -27.7163846, lng: 153.2065469 },
+                { name: "Taco Bell Cleveland", lat: -27.5241674, lng: 153.2525786 },
+                { name: "Taco Bell Coomera South", lat: -27.8527498, lng: 153.3344335 },
+                { name: "Taco Bell Coorparoo", lat: -27.4967498, lng: 153.054188 },
+                { name: "Taco Bell East Ipswich", lat: -27.6128434, lng: 152.7806682 }
+            ];
+
+            locations.forEach(function(location) {
+                new google.maps.Marker({
+                    position: { lat: location.lat, lng: location.lng },
+                    map: map,
+                    title: location.name
+                });
+            });
+        }
+
+        window.initMap = initMap; // Ensure callback function is globally accessible
+    </script>
+</head>
+<body onload="loadScript()">
+    <h1>Map of KFC and Taco Bell Locations</h1>
+    <div id="map" style="height: 600px; width: 100%;"></div>
+</body>
+</html>
