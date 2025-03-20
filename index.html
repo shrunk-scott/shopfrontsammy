@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Site Locations</title>
+    <title>Map of KFC and Taco Bell Locations</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -16,7 +16,7 @@
             margin: 20px 0;
         }
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
             background: white;
@@ -40,13 +40,21 @@
             border-color: #007aff;
         }
         #map {
-            height: 500px;
+            height: 700px;
             width: 100%;
             margin-top: 20px;
             border-radius: 12px;
         }
     </style>
+    <!-- Load PapaParse library from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script>
+        let map;
+        let markers = [];
+        // Global variable to hold CSV data
+        let allLocations = [];
+
+        // Function to load the Google Maps API script dynamically
         function loadScript() {
             const apiKey = 'AIzaSyDM5PYHiEkRV4tCdBpP7tKrRtobVXoCzSo';
             const script = document.createElement('script');
@@ -60,9 +68,7 @@
             document.head.appendChild(script);
         }
 
-        let map;
-        let markers = [];
-        
+        // Initialize the map and load CSV data
         function initMap() {
             if (typeof google === 'undefined' || !google.maps) {
                 console.error('Google Maps API failed to load.');
@@ -80,34 +86,51 @@
                 ]
             });
 
-            addMarkers('All');
+            // Load CSV data using PapaParse
+            Papa.parse('Untitled Spreadsheet.csv', {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    console.log("CSV data loaded", results.data);
+                    // Save the parsed data to the global variable
+                    allLocations = results.data;
+                    // Add all markers initially
+                    addMarkers('All');
+                },
+                error: function(err) {
+                    console.error("Error loading CSV file", err);
+                    alert("Error loading CSV file");
+                }
+            });
         }
-        
-        const locations = [
-            { name: "KFC Acacia Ridge", lat: -27.587525, lng: 153.0274054, type: "KFC" },
-            { name: "KFC Albany Creek", lat: -27.3453735, lng: 152.964313, type: "KFC" },
-            { name: "KFC Annandale", lat: -19.3167581, lng: 146.7924434, type: "KFC" },
-            { name: "Taco Bell Annerley", lat: -27.5147084, lng: 153.0309904, type: "Taco Bell" },
-            { name: "Taco Bell Beenleigh", lat: -27.7163846, lng: 153.2065469, type: "Taco Bell" },
-            { name: "Taco Bell Cleveland", lat: -27.5241674, lng: 153.2525786, type: "Taco Bell" },
-        ];
 
+        // Add markers to the map based on the selected filter
         function addMarkers(filter) {
             clearMarkers();
-            
-            locations.forEach(function(location) {
+            allLocations.forEach(function(location) {
+                // If the filter is 'All' or matches the location type
                 if (filter === 'All' || location.type === filter) {
                     let marker = new google.maps.Marker({
-                        position: { lat: location.lat, lng: location.lng },
+                        position: { lat: parseFloat(location.lat), lng: parseFloat(location.lng) },
                         map: map,
                         title: location.name,
                         icon: "https://maps.google.com/mapfiles/kml/shapes/cycling.png"
                     });
+                    
+                    let infoWindow = new google.maps.InfoWindow({
+                        content: `<strong>${location.name}</strong><br>${location.address}`
+                    });
+                    
+                    marker.addListener("click", function() {
+                        infoWindow.open(map, marker);
+                    });
+                    
                     markers.push(marker);
                 }
             });
         }
 
+        // Remove existing markers from the map
         function clearMarkers() {
             markers.forEach(marker => marker.setMap(null));
             markers = [];
