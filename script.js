@@ -16,23 +16,38 @@ function loadScript() {
 }
 
 function initMap() {
+  // Check if the Google Maps API loaded
   if (typeof google === 'undefined' || !google.maps) {
     console.error('Google Maps API failed to load.');
     alert('Google Maps failed to load. Please check API key permissions.');
     return;
   }
 
+  // Initialize the map with custom styles that include roads styling.
   map = new google.maps.Map(document.getElementById('map'), {
     zoom: 7,
     center: { lat: -27.5, lng: 153.0 },
     styles: [
+      // General geometry style
       { elementType: 'geometry', stylers: [{ color: '#f5f5f7' }] },
+      // Label styling
       { elementType: 'labels.text.fill', stylers: [{ color: '#1d1d1f' }] },
-      { elementType: 'labels.text.stroke', stylers: [{ color: '#ffffff' }] }
+      { elementType: 'labels.text.stroke', stylers: [{ color: '#ffffff' }] },
+      // Road styling for better visibility
+      { 
+        featureType: "road",
+        elementType: "geometry",
+        stylers: [{ color: "#ffffff" }]
+      },
+      {
+        featureType: "road",
+        elementType: "labels.text.fill",
+        stylers: [{ color: "#5e5e5e" }]
+      }
     ]
   });
 
-  // Use the raw GitHub URL for the CSV file
+  // Load CSV data using PapaParse from the raw GitHub URL
   Papa.parse("https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Untitled%20Spreadsheet.csv", {
     download: true,
     header: true,
@@ -51,9 +66,18 @@ function initMap() {
 function addMarkers(filter) {
   clearMarkers();
   allLocations.forEach(function(location) {
+    // Ensure lat and lng are valid numbers
+    const lat = parseFloat(location.lat);
+    const lng = parseFloat(location.lng);
+    if (isNaN(lat) || isNaN(lng)) {
+      console.warn("Invalid coordinates for", location.name);
+      return;
+    }
+    
+    // Check if this location matches the filter or if filter is 'All'
     if (filter === 'All' || location.type === filter) {
       let marker = new google.maps.Marker({
-        position: { lat: parseFloat(location.lat), lng: parseFloat(location.lng) },
+        position: { lat: lat, lng: lng },
         map: map,
         title: location.name,
         icon: "https://maps.google.com/mapfiles/kml/shapes/cycling.png"
