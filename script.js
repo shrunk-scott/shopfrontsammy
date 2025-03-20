@@ -6,7 +6,6 @@ function loadScript() {
   const apiKey = 'AIzaSyDM5PYHiEkRV4tCdBpP7tKrRtobVXoCzSo'; // Replace with your API key if needed
   const script = document.createElement('script');
   script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
-  // Although the API suggests using async loading, our dynamic script insertion already sets async/defer.
   script.async = true;
   script.defer = true;
   script.onerror = function() {
@@ -23,25 +22,11 @@ function initMap() {
     return;
   }
 
-  // Initialize the map with custom styles (roads styled for better visibility)
+  // Initialize the map using default ROADMAP type.
   map = new google.maps.Map(document.getElementById('map'), {
     zoom: 7,
     center: { lat: -27.5, lng: 153.0 },
-    styles: [
-      { elementType: 'geometry', stylers: [{ color: '#f5f5f7' }] },
-      { elementType: 'labels.text.fill', stylers: [{ color: '#1d1d1f' }] },
-      { elementType: 'labels.text.stroke', stylers: [{ color: '#ffffff' }] },
-      { 
-        featureType: "road",
-        elementType: "geometry",
-        stylers: [{ color: "#ffffff" }]
-      },
-      {
-        featureType: "road",
-        elementType: "labels.text.fill",
-        stylers: [{ color: "#5e5e5e" }]
-      }
-    ]
+    mapTypeId: google.maps.MapTypeId.ROADMAP
   });
 
   // Load CSV data using PapaParse from the raw GitHub URL
@@ -68,29 +53,29 @@ function addMarkers(filter) {
   console.log("Total CSV rows:", allLocations.length);
   
   allLocations.forEach(function(location, index) {
-    // Log the keys of each row to check header names
+    // Log keys to see header names
     console.log(`Row ${index} keys:`, Object.keys(location));
     
-    // Attempt to use both lowercase and capitalized header names for coordinates
+    // Support both lowercase and capitalized headers for coordinates.
     const lat = parseFloat(location.lat || location.Latitude);
     const lng = parseFloat(location.lng || location.Longitude);
 
-    // Validate that lat and lng are numbers.
     if (isNaN(lat) || isNaN(lng)) {
       console.warn(`Invalid coordinates for row ${index}:`, location);
       return;
     }
 
-    // Check filtering; if filter is 'All' or matches the location type.
-    // Also try checking with both lowercase and capitalized field names.
+    // Support both lowercase and capitalized headers for type.
     const type = location.type || location.Type;
     if (filter === 'All' || type === filter) {
       let marker = new google.maps.Marker({
         position: { lat: lat, lng: lng },
         map: map,
         title: location.name || location.Name,
-        // Remove or change icon as needed. For testing, you can remove it.
-        icon: "https://maps.google.com/mapfiles/kml/shapes/cycling.png"
+        icon: {
+          url: "https://maps.google.com/mapfiles/kml/shapes/cycling.png",
+          scaledSize: new google.maps.Size(20, 20) // Smaller marker size
+        }
       });
 
       let infoWindow = new google.maps.InfoWindow({
@@ -98,6 +83,9 @@ function addMarkers(filter) {
       });
 
       marker.addListener("click", function() {
+        // Zoom in and center the map on this marker when clicked.
+        map.setZoom(15);
+        map.setCenter(marker.getPosition());
         infoWindow.open(map, marker);
       });
 
