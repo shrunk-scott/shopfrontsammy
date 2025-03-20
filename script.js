@@ -32,8 +32,8 @@ function initMap() {
     ]
   });
 
-  // Load CSV data using PapaParse
-  Papa.parse('Untitled Spreadsheet.csv', {
+  // Use the raw GitHub URL for the CSV file
+  Papa.parse("https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Untitled%20Spreadsheet.csv", {
     download: true,
     header: true,
     complete: function(results) {
