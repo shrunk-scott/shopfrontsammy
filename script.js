@@ -6,6 +6,7 @@ function loadScript() {
   const apiKey = 'AIzaSyDM5PYHiEkRV4tCdBpP7tKrRtobVXoCzSo'; // Replace with your API key if needed
   const script = document.createElement('script');
   script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
+  // Although the API suggests using async loading, our dynamic script insertion already sets async/defer.
   script.async = true;
   script.defer = true;
   script.onerror = function() {
@@ -43,7 +44,7 @@ function initMap() {
     ]
   });
 
-  // Use the raw GitHub URL for the CSV file
+  // Load CSV data using PapaParse from the raw GitHub URL
   Papa.parse("https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Untitled%20Spreadsheet.csv", {
     download: true,
     header: true,
@@ -67,28 +68,33 @@ function addMarkers(filter) {
   console.log("Total CSV rows:", allLocations.length);
   
   allLocations.forEach(function(location, index) {
-    console.log(`Row ${index}:`, location);
-    const lat = parseFloat(location.lat);
-    const lng = parseFloat(location.lng);
+    // Log the keys of each row to check header names
+    console.log(`Row ${index} keys:`, Object.keys(location));
+    
+    // Attempt to use both lowercase and capitalized header names for coordinates
+    const lat = parseFloat(location.lat || location.Latitude);
+    const lng = parseFloat(location.lng || location.Longitude);
 
     // Validate that lat and lng are numbers.
     if (isNaN(lat) || isNaN(lng)) {
-      console.warn(`Invalid coordinates at row ${index} for location:`, location);
+      console.warn(`Invalid coordinates for row ${index}:`, location);
       return;
     }
 
-    // If filtering by type, ensure the value matches exactly
-    if (filter === 'All' || location.type === filter) {
+    // Check filtering; if filter is 'All' or matches the location type.
+    // Also try checking with both lowercase and capitalized field names.
+    const type = location.type || location.Type;
+    if (filter === 'All' || type === filter) {
       let marker = new google.maps.Marker({
         position: { lat: lat, lng: lng },
         map: map,
-        title: location.name,
-        // Try removing the icon property temporarily to test default marker icon:
+        title: location.name || location.Name,
+        // Remove or change icon as needed. For testing, you can remove it.
         icon: "https://maps.google.com/mapfiles/kml/shapes/cycling.png"
       });
 
       let infoWindow = new google.maps.InfoWindow({
-        content: `<strong>${location.name}</strong><br>${location.address}`
+        content: `<strong>${location.name || location.Name}</strong><br>${location.address || location.Address}`
       });
 
       marker.addListener("click", function() {
