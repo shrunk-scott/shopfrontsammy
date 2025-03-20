@@ -1,10 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Map of KFC and Taco Bell Locations</title>
+    <title>Site Locations</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            font-weight: 600;
+            margin: 20px 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        select {
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        select:hover {
+            border-color: #007aff;
+        }
+        #map {
+            height: 500px;
+            width: 100%;
+            margin-top: 20px;
+            border-radius: 12px;
+        }
+    </style>
     <script>
         function loadScript() {
-            const apiKey = 'AIzaSyDM5PYHiEkRV4tCdBpP7tKrRtobVXoCzSo'; // Ensure this API key is valid
+            const apiKey = 'AIzaSyDM5PYHiEkRV4tCdBpP7tKrRtobVXoCzSo';
             const script = document.createElement('script');
             script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
             script.async = true;
@@ -16,6 +60,9 @@
             document.head.appendChild(script);
         }
 
+        let map;
+        let markers = [];
+        
         function initMap() {
             if (typeof google === 'undefined' || !google.maps) {
                 console.error('Google Maps API failed to load.');
@@ -23,53 +70,60 @@
                 return;
             }
 
-            var map = new google.maps.Map(document.getElementById('map'), {
+            map = new google.maps.Map(document.getElementById('map'), {
                 zoom: 7,
-                center: { lat: -27.5, lng: 153.0 }
+                center: { lat: -27.5, lng: 153.0 },
+                styles: [
+                    { elementType: 'geometry', stylers: [{ color: '#f5f5f7' }] },
+                    { elementType: 'labels.text.fill', stylers: [{ color: '#1d1d1f' }] },
+                    { elementType: 'labels.text.stroke', stylers: [{ color: '#ffffff' }] }
+                ]
             });
 
-            var locations = [
-                { name: "KFC Acacia Ridge", lat: -27.587525, lng: 153.0274054 },
-                { name: "KFC Albany Creek", lat: -27.3453735, lng: 152.964313 },
-                { name: "KFC Annandale", lat: -19.3167581, lng: 146.7924434 },
-                { name: "KFC Annerley", lat: -27.5151205, lng: 153.0309705 },
-                { name: "KFC Arundel", lat: -27.9469922, lng: 153.3511197 },
-                { name: "KFC Ashmore", lat: -27.9736794, lng: 153.3788455 },
-                { name: "KFC Aspley", lat: -27.3614999, lng: 153.0167 },
-                { name: "KFC Beaudesert", lat: -27.9815315, lng: 152.9943974 },
-                { name: "KFC Beenleigh", lat: -27.7186694, lng: 153.1980352 },
-                { name: "KFC Benowa", lat: -28.0095456, lng: 153.3914765 },
-                { name: "KFC Berrinba", lat: -27.6761625, lng: 153.0794281 },
-                { name: "KFC Bethania", lat: -27.7012913, lng: 153.1581463 },
-                { name: "KFC Birkdale", lat: -27.495144, lng: 153.2123753 },
-                { name: "KFC Booval", lat: -27.6139858, lng: 152.7883949 },
-                { name: "KFC Brassall", lat: -27.5972907, lng: 152.7459002 },
-                { name: "KFC Browns Plains", lat: -27.662809, lng: 153.041267 },
-                { name: "KFC Bundamba", lat: -27.5882848, lng: 152.819894 },
-                { name: "KFC Burleigh", lat: -28.1006774, lng: 153.4360203 },
-                { name: "KFC Burpengary", lat: -27.1545908, lng: 152.9752478 },
-                { name: "Taco Bell Annerley", lat: -27.5147084, lng: 153.0309904 },
-                { name: "Taco Bell Beenleigh", lat: -27.7163846, lng: 153.2065469 },
-                { name: "Taco Bell Cleveland", lat: -27.5241674, lng: 153.2525786 },
-                { name: "Taco Bell Coomera South", lat: -27.8527498, lng: 153.3344335 },
-                { name: "Taco Bell Coorparoo", lat: -27.4967498, lng: 153.054188 },
-                { name: "Taco Bell East Ipswich", lat: -27.6128434, lng: 152.7806682 }
-            ];
+            addMarkers('All');
+        }
+        
+        const locations = [
+            { name: "KFC Acacia Ridge", lat: -27.587525, lng: 153.0274054, type: "KFC" },
+            { name: "KFC Albany Creek", lat: -27.3453735, lng: 152.964313, type: "KFC" },
+            { name: "KFC Annandale", lat: -19.3167581, lng: 146.7924434, type: "KFC" },
+            { name: "Taco Bell Annerley", lat: -27.5147084, lng: 153.0309904, type: "Taco Bell" },
+            { name: "Taco Bell Beenleigh", lat: -27.7163846, lng: 153.2065469, type: "Taco Bell" },
+            { name: "Taco Bell Cleveland", lat: -27.5241674, lng: 153.2525786, type: "Taco Bell" },
+        ];
 
+        function addMarkers(filter) {
+            clearMarkers();
+            
             locations.forEach(function(location) {
-                new google.maps.Marker({
-                    position: { lat: location.lat, lng: location.lng },
-                    map: map,
-                    title: location.name
-                });
+                if (filter === 'All' || location.type === filter) {
+                    let marker = new google.maps.Marker({
+                        position: { lat: location.lat, lng: location.lng },
+                        map: map,
+                        title: location.name,
+                        icon: "https://maps.google.com/mapfiles/kml/shapes/cycling.png"
+                    });
+                    markers.push(marker);
+                }
             });
         }
 
-        window.initMap = initMap; // Ensure callback function is globally accessible
+        function clearMarkers() {
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+        }
     </script>
 </head>
 <body onload="loadScript()">
-    <h1>Map of KFC and Taco Bell Locations</h1>
-    <div id="map" style="height: 600px; width: 100%;"></div>
+    <div class="container">
+        <h1>Map of KFC and Taco Bell Locations</h1>
+        <label for="filter">Filter by:</label>
+        <select id="filter" onchange="addMarkers(this.value)">
+            <option value="All">All</option>
+            <option value="KFC">KFC</option>
+            <option value="Taco Bell">Taco Bell</option>
+        </select>
+        <div id="map"></div>
+    </div>
 </body>
 </html>
