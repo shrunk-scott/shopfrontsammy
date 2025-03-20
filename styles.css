@@ -1,3 +1,45 @@
+/* Base Reset and General Styles */
+html {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  font-family: sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+/* Container styling */
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+/* Header and logo styling */
+header {
+  text-align: center;
+}
+
+.logo {
+  display: block;
+  margin: 0 auto 20px;
+  max-width: 150px; /* Adjust size as needed */
+}
+
+/* Frame the map */
+#map {
+  height: 700px;   /* or adjust height as needed */
+  width: 100%;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
 html {
 	-webkit-text-size-adjust: 100%;
 	-ms-text-size-adjust: 100%;
