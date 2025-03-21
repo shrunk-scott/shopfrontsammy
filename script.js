@@ -38,7 +38,6 @@ function initMap() {
     mapTypeId: google.maps.MapTypeId.ROADMAP
   });
   
-  // Attach Reset View button event.
   const resetBtn = document.getElementById('resetBtn');
   if (resetBtn) {
     resetBtn.addEventListener('click', resetView);
@@ -119,19 +118,20 @@ function resetView() {
   map.setCenter(defaultCenter);
   infoWindows.forEach(iw => iw.close());
   
-  // Reset all cluster filter checkboxes to checked and show all markers & zones.
+  // Reset cluster filters (all selected)
   let checkboxes = document.querySelectorAll('#clusterFilter input[type="checkbox"]');
-  checkboxes.forEach(cb => {
-    cb.checked = true;
+  checkboxes.forEach(cb => { 
+    cb.checked = true; 
   });
   
+  // Show all cluster zones and markers.
   for (let id in clusterZones) {
     if (clusterZones.hasOwnProperty(id)) {
       clusterZones[id].setMap(map);
     }
   }
-  
   markers.forEach(marker => marker.setMap(map));
+  
   updateSiteCount();
 }
 
@@ -220,13 +220,13 @@ function processClustering() {
   let clusterData = finalClusters.map(cluster => {
     let fcCluster = turf.featureCollection(cluster.features);
     let centroidFeature = turf.centroid(fcCluster);
-    let centroid = centroidFeature.geometry.coordinates; // [lng, lat]
+    let centroid = centroidFeature.geometry.coordinates;
     let maxDist = 0;
     cluster.features.forEach(pt => {
       let d = turf.distance(centroidFeature, pt, { units: 'kilometers' });
       if (d > maxDist) maxDist = d;
     });
-    maxDist *= 1.1; // Buffer.
+    maxDist *= 1.1;
     return { id: cluster.id, centroid: centroid, radius: maxDist };
   });
   console.log("Cluster data:", clusterData);
