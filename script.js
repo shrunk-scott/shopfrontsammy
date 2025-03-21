@@ -86,7 +86,7 @@ function addMarkers() {
       }
     });
     
-    // Assign the marker its cluster id (if set later in processClustering).
+    // Assign the marker its cluster id.
     marker.cluster = location.cluster;
     
     let infoWindow = new google.maps.InfoWindow({
@@ -118,6 +118,21 @@ function resetView() {
   map.setZoom(defaultZoom);
   map.setCenter(defaultCenter);
   infoWindows.forEach(iw => iw.close());
+  
+  // Reset all cluster filter checkboxes to checked and show all markers & zones.
+  let checkboxes = document.querySelectorAll('#clusterFilter input[type="checkbox"]');
+  checkboxes.forEach(cb => {
+    cb.checked = true;
+  });
+  
+  for (let id in clusterZones) {
+    if (clusterZones.hasOwnProperty(id)) {
+      clusterZones[id].setMap(map);
+    }
+  }
+  
+  markers.forEach(marker => marker.setMap(map));
+  updateSiteCount();
 }
 
 function updateSiteCount() {
@@ -129,7 +144,6 @@ function updateSiteCount() {
 }
 
 function processClustering() {
-  // Convert locations to GeoJSON Points.
   let features = allLocations.map(loc => {
     const lat = parseFloat(loc.Latitude);
     const lng = parseFloat(loc.Longitude);
@@ -143,11 +157,9 @@ function processClustering() {
   }
   
   let fc = turf.featureCollection(features);
-  // Use DBSCAN with a 7 km threshold and minPoints: 1 so every point is clustered.
   let clustered = turf.clustersDbscan(fc, 7, { units: 'kilometers', minPoints: 1 });
   console.log("Clustered features:", clustered.features);
   
-  // Ensure no feature remains as noise.
   let noiseId = 0;
   clustered.features.forEach(feature => {
     if (feature.properties.cluster === undefined || feature.properties.cluster < 0) {
@@ -156,7 +168,6 @@ function processClustering() {
     }
   });
   
-  // Group features by their cluster id.
   let clusters = {};
   clustered.features.forEach(feature => {
     let cid = feature.properties.cluster;
@@ -165,7 +176,6 @@ function processClustering() {
   });
   console.log("Initial clusters:", clusters);
   
-  // Build finalClusters array with whole number IDs.
   finalClusters = [];
   let finalClusterIdCounter = 0;
   for (let cid in clusters) {
@@ -207,7 +217,6 @@ function processClustering() {
   }
   console.log("Final clusters (whole numbers):", finalClusters);
   
-  // Compute centroids and create raw circle zones for each final cluster.
   let clusterData = finalClusters.map(cluster => {
     let fcCluster = turf.featureCollection(cluster.features);
     let centroidFeature = turf.centroid(fcCluster);
@@ -222,14 +231,12 @@ function processClustering() {
   });
   console.log("Cluster data:", clusterData);
   
-  // Compute Voronoi cells for cluster centroids.
   let centroidFeatures = clusterData.map(cd => turf.point(cd.centroid, { id: cd.id }));
   let centroidFC = turf.featureCollection(centroidFeatures);
   let bbox = [-180, -90, 180, 90];
   let voronoiPolygons = turf.voronoi(centroidFC, { bbox: bbox });
   console.log("Voronoi polygons:", voronoiPolygons);
   
-  // For each cluster, create a raw circle and clip it with its Voronoi cell.
   clusterData.forEach(cd => {
     let rawCircle = turf.circle(cd.centroid, cd.radius, { steps: 64, units: 'kilometers' });
     let cell = null;
@@ -241,10 +248,10 @@ function processClustering() {
       });
     }
     let finalZone = cell ? turf.intersect(rawCircle, cell) : rawCircle;
+    if (!finalZone) finalZone = rawCircle;
     cd.zoneGeoJSON = finalZone;
   });
   
-  // Draw final zones on the map.
   clusterData.forEach((cd, idx) => {
     if (!cd.zoneGeoJSON) return;
     let coords = cd.zoneGeoJSON.geometry.coordinates[0];
@@ -288,7 +295,6 @@ function updateClusterFilter() {
       } else {
         if (clusterZones[cd.id]) clusterZones[cd.id].setMap(null);
       }
-      // Toggle markers belonging to this cluster.
       markers.forEach(marker => {
         if (marker.cluster === cd.id) {
           marker.setMap(this.checked ? map : null);
@@ -299,14 +305,17 @@ function updateClusterFilter() {
     let label = document.createElement('label');
     label.htmlFor = checkbox.id;
     label.style.cursor = "pointer";
-    label.textContent = "Cluster " + cd.id;
-    label.addEventListener('click', function() {
+    let span = document.createElement('span');
+    span.textContent = "Cluster " + cd.id;
+    span.addEventListener('click', function(e) {
+      e.stopPropagation();
       if (clusterZones[cd.id]) {
         let bounds = new google.maps.LatLngBounds();
         clusterZones[cd.id].getPath().forEach(point => bounds.extend(point));
         map.fitBounds(bounds);
       }
     });
+    label.appendChild(span);
     filterContainer.appendChild(checkbox);
     filterContainer.appendChild(label);
     filterContainer.appendChild(document.createTextNode(" "));
