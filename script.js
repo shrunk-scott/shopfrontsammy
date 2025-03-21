@@ -3,7 +3,7 @@ let markers = [];
 let infoWindows = [];
 let allLocations = [];
 let clusterZones = {}; // Key: final cluster id, value: google.maps.Polygon
-let finalClusters = []; // Array of cluster objects: { id, features }
+let finalClusters = []; // Array of cluster objects: { id, features, centroid, radius, zoneGeoJSON }
 const defaultCenter = { lat: -27.5, lng: 153.0 };
 const defaultZoom = 7;
 const clusterColorPalette = [
@@ -38,7 +38,7 @@ function initMap() {
     mapTypeId: google.maps.MapTypeId.ROADMAP
   });
 
-  // Attach Reset View button event listener.
+  // Attach Reset View button event.
   const resetBtn = document.getElementById('resetBtn');
   if (resetBtn) {
     resetBtn.addEventListener('click', resetView);
@@ -69,7 +69,6 @@ function addMarkers() {
   console.log("Total CSV rows:", allLocations.length);
   
   allLocations.forEach((location, index) => {
-    // Expected headers: Name, Address, Latitude, Longitude.
     const lat = parseFloat(location.Latitude);
     const lng = parseFloat(location.Longitude);
     if (isNaN(lat) || isNaN(lng)) {
@@ -141,7 +140,7 @@ function processClustering() {
   }
   
   let fc = turf.featureCollection(features);
-  // Use DBSCAN with a 7 km threshold and minPoints: 1 so every point is clustered.
+  // Use DBSCAN with a 7 km threshold and ensure every point is clustered.
   let clustered = turf.clustersDbscan(fc, 7, { units: 'kilometers', minPoints: 1 });
   console.log("Clustered features:", clustered.features);
   
@@ -149,7 +148,6 @@ function processClustering() {
   let clusters = {};
   clustered.features.forEach(feature => {
     let cid = feature.properties.cluster;
-    // Every point should have a cluster id now.
     if (cid === undefined) return;
     if (!clusters[cid]) clusters[cid] = [];
     clusters[cid].push(feature);
@@ -161,7 +159,6 @@ function processClustering() {
   for (let cid in clusters) {
     let clusterPoints = clusters[cid];
     if (clusterPoints.length > 25) {
-      // Simple subdivision: sort by latitude and split sequentially.
       clusterPoints.sort((a, b) => a.geometry.coordinates[1] - b.geometry.coordinates[1]);
       let numSub = Math.ceil(clusterPoints.length / 25);
       for (let i = 0; i < numSub; i++) {
@@ -205,7 +202,7 @@ function processClustering() {
       let d = turf.distance(centroidFeature, pt, { units: 'kilometers' });
       if (d > maxDist) maxDist = d;
     });
-    maxDist *= 1.1; // Buffer.
+    maxDist *= 1.1;
     return { id: cluster.id, centroid: centroid, radius: maxDist };
   });
   console.log("Cluster data:", clusterData);
@@ -213,11 +210,11 @@ function processClustering() {
   // Compute Voronoi cells for cluster centroids.
   let centroidFeatures = clusterData.map(cd => turf.point(cd.centroid, { id: cd.id }));
   let centroidFC = turf.featureCollection(centroidFeatures);
-  let bbox = [-180, -90, 180, 90]; // Global bbox.
+  let bbox = [-180, -90, 180, 90];
   let voronoiPolygons = turf.voronoi(centroidFC, { bbox: bbox });
   console.log("Voronoi polygons:", voronoiPolygons);
   
-  // For each cluster, create a raw circle (using turf.circle) and clip it with its Voronoi cell.
+  // For each cluster, create a raw circle and clip it with its Voronoi cell.
   clusterData.forEach(cd => {
     let rawCircle = turf.circle(cd.centroid, cd.radius, { steps: 64, units: 'kilometers' });
     let cell = null;
@@ -232,7 +229,7 @@ function processClustering() {
     cd.zoneGeoJSON = finalZone;
   });
   
-  // Draw final zones as polygons on the map with distinct colors.
+  // Draw final zones on the map.
   clusterData.forEach((cd, idx) => {
     if (!cd.zoneGeoJSON) return;
     let coords = cd.zoneGeoJSON.geometry.coordinates[0];
@@ -250,7 +247,6 @@ function processClustering() {
     clusterZones[cd.id] = polygon;
   });
   
-  // Save final cluster data globally for filter zooming.
   finalClusters = clusterData;
   console.log("Service zones created for clusters:", finalClusters.map(c => c.id));
 }
@@ -269,6 +265,7 @@ function updateClusterFilter() {
     let checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.id = 'cluster_' + cd.id;
+    checkbox.classList.add('modern-checkbox');
     checkbox.checked = true;
     checkbox.addEventListener('change', function() {
       if (this.checked) {
