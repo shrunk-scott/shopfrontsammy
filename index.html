@@ -1,24 +1,101 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Site Locations</title>
-  <link rel="stylesheet" href="styles.css">
-  <!-- Load PapaParse from CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-</head>
-<body>
-  <div class="container">
-    <!-- Centered Logo -->
-    <header>
-      <img src="https://cdn.prod.website-files.com/675a6c39b29c1466a4306560/6760fd79aa53c194bc2f4933_scroller-mascot.svg" alt="Logo" class="logo">
-    </header>
-    <h1>Site Locations</h1>
-    <!-- Reset View Button -->
-    <button id="resetBtn">Reset View</button>
-    <!-- Map Container -->
-    <div id="map"></div>
-  </div>
-  <script src="script.js"></script>
-</body>
-</html>
+/* --- CSS Reset --- */
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, main, menu, nav, section {
+  display: block;
+}
+body {
+  line-height: 1;
+  background: #fff;
+  font-family: Arial, sans-serif;
+}
+ol, ul {
+  list-style: none;
+}
+blockquote, q {
+  quotes: none;
+}
+blockquote::before, blockquote::after,
+q::before, q::after {
+  content: '';
+  content: none;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* --- Container & Page Styling --- */
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+/* --- Header and Logo --- */
+header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.logo {
+  display: block;
+  margin: 0 auto;
+  max-width: 150px;  /* Adjust the maximum width as needed */
+}
+
+/* --- Site Count Display --- */
+#siteCount {
+  margin: 10px 0;
+  font-size: 18px;
+  color: #333;
+}
+
+/* --- Reset View Button --- */
+#resetBtn {
+  margin: 10px;
+  padding: 8px 16px;
+  font-size: 16px;
+  border: none;
+  background-color: #3898ec;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#resetBtn:hover {
+  background-color: #2a7ac7;
+}
+
+/* --- Map Container --- */
+#map {
+  height: 700px;   /* Adjust the height as needed */
+  width: 100%;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  margin-top: 20px;
+}
