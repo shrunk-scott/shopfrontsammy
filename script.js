@@ -2,9 +2,16 @@ let map;
 let markers = [];
 let infoWindows = [];
 let allLocations = [];
-let clusterCircles = {}; // Mapping cluster id => google.maps.Circle
+let clusterZones = {}; // Key: final cluster id, value: google.maps.Polygon
+let finalClusters = []; // Array of cluster objects: { id, locations, centroid, radius, zoneGeoJSON }
 const defaultCenter = { lat: -27.5, lng: 153.0 };
 const defaultZoom = 7;
+
+const clusterColorPalette = [
+  "#FF5733", "#33FF57", "#3357FF", "#F39C12",
+  "#8E44AD", "#16A085", "#D35400", "#27AE60",
+  "#C70039", "#900C3F", "#581845", "#1ABC9C"
+];
 
 function loadScript() {
   const apiKey = 'AIzaSyDM5PYHiEkRV4tCdBpP7tKrRtobVXoCzSo'; // Replace if needed
@@ -25,31 +32,29 @@ function initMap() {
     alert('Google Maps failed to load. Please check API key permissions.');
     return;
   }
-  
-  // Initialize the map.
+
   map = new google.maps.Map(document.getElementById('map'), {
     zoom: defaultZoom,
     center: defaultCenter,
     mapTypeId: google.maps.MapTypeId.ROADMAP
   });
-  
-  // Attach Reset View button event.
+
+  // Attach Reset View button event listener.
   const resetBtn = document.getElementById('resetBtn');
   if (resetBtn) {
     resetBtn.addEventListener('click', resetView);
   } else {
     console.warn("Reset button not found.");
   }
-  
-  // Load CSV data.
+
   Papa.parse("https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Untitled%20Spreadsheet.csv", {
     download: true,
     header: true,
     complete: function(results) {
       console.log("CSV data loaded:", results.data);
       allLocations = results.data;
-      processClustering();
       addMarkers();
+      processClustering();
       updateSiteCount();
       updateClusterFilter();
     },
@@ -60,106 +65,19 @@ function initMap() {
   });
 }
 
-function processClustering() {
-  // Convert each location into a GeoJSON Point.
-  let features = allLocations.map(loc => {
-    const lat = parseFloat(loc.Latitude);
-    const lng = parseFloat(loc.Longitude);
-    if (isNaN(lat) || isNaN(lng)) return null;
-    return turf.point([lng, lat]);
-  }).filter(f => f !== null);
-  
-  if (features.length === 0) {
-    console.warn("No valid features for clustering.");
-    return;
-  }
-  
-  let fc = turf.featureCollection(features);
-  // Cluster with DBSCAN (7 km threshold).
-  let clustered = turf.clustersDbscan(fc, 7, { units: 'kilometers' });
-  console.log("Clustered features:", clustered.features);
-  
-  // For each feature with a valid cluster id, match it to the corresponding location (by coordinates).
-  // We'll use a small tolerance to match coordinates.
-  const tol = 1e-5;
-  clustered.features.forEach(feature => {
-    if (feature.properties.cluster === undefined || feature.properties.cluster < 0) return;
-    const [lng, lat] = feature.geometry.coordinates;
-    allLocations.forEach(loc => {
-      const locLat = parseFloat(loc.Latitude);
-      const locLng = parseFloat(loc.Longitude);
-      if (Math.abs(locLat - lat) < tol && Math.abs(locLng - lng) < tol) {
-        loc.cluster = feature.properties.cluster;
-      }
-    });
-  });
-  
-  // Group locations by cluster id.
-  let clusters = {};
-  allLocations.forEach(loc => {
-    if (loc.cluster !== undefined && loc.cluster >= 0) {
-      if (!clusters[loc.cluster]) clusters[loc.cluster] = [];
-      clusters[loc.cluster].push(loc);
-    }
-  });
-  
-  console.log("Clusters:", clusters);
-  
-  // Define a palette of colors for the clusters.
-  const colors = ["#FF5733", "#33FF57", "#3357FF", "#F39C12", "#8E44AD", "#16A085", "#D35400", "#27AE60"];
-  let clusterIds = Object.keys(clusters);
-  clusterIds.forEach((clusterId, idx) => {
-    let clusterLocations = clusters[clusterId];
-    // Create GeoJSON points for the cluster.
-    let points = clusterLocations.map(loc => {
-      return turf.point([parseFloat(loc.Longitude), parseFloat(loc.Latitude)]);
-    });
-    let fcCluster = turf.featureCollection(points);
-    let centroidFeature = turf.centroid(fcCluster);
-    let centroid = centroidFeature.geometry.coordinates; // [lng, lat]
-    
-    // Find maximum distance from centroid.
-    let maxDistance = 0;
-    points.forEach(pt => {
-      let d = turf.distance(centroidFeature, pt, { units: 'kilometers' });
-      if (d > maxDistance) maxDistance = d;
-    });
-    // Add 10% buffer.
-    maxDistance *= 1.1;
-    
-    let color = colors[idx % colors.length];
-    
-    // Create a circle representing the service zone.
-    let circle = new google.maps.Circle({
-      strokeColor: color,
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: color,
-      fillOpacity: 0.35,
-      map: map,
-      center: { lat: centroid[1], lng: centroid[0] },
-      radius: maxDistance * 1000 // convert km to meters.
-    });
-    
-    // Save the circle keyed by cluster id.
-    clusterCircles[clusterId] = circle;
-  });
-  
-  console.log("Service zones created for clusters:", Object.keys(clusterCircles));
-}
-
 function addMarkers() {
   clearMarkers();
   console.log("Total CSV rows:", allLocations.length);
   
   allLocations.forEach((location, index) => {
-    console.log(`Row ${index} keys:`, Object.keys(location));
+    // Expected headers: Name, Address, Latitude, Longitude
     const lat = parseFloat(location.Latitude);
     const lng = parseFloat(location.Longitude);
     if (isNaN(lat) || isNaN(lng)) {
       console.warn(`Invalid coordinates at row ${index}:`, location);
       return;
     }
+    
     let marker = new google.maps.Marker({
       position: { lat: lat, lng: lng },
       map: map,
@@ -170,7 +88,7 @@ function addMarkers() {
       }
     });
     
-    // Append cluster info if available.
+    // Append cluster info (if assigned later in processClustering)
     let clusterText = (location.cluster !== undefined) ? "Cluster: " + location.cluster : "No cluster";
     let infoWindow = new google.maps.InfoWindow({
       content: `<strong>${location.Name}</strong><br>${location.Address}<br>${clusterText}`
@@ -210,35 +128,202 @@ function updateSiteCount() {
   }
 }
 
+// ------------------- Clustering & Service Zones -------------------
+
+function processClustering() {
+  // Convert locations to GeoJSON Points.
+  let features = allLocations.map(loc => {
+    const lat = parseFloat(loc.Latitude);
+    const lng = parseFloat(loc.Longitude);
+    if (isNaN(lat) || isNaN(lng)) return null;
+    return turf.point([lng, lat]);
+  }).filter(f => f !== null);
+  
+  if (features.length === 0) {
+    console.warn("No valid features for clustering.");
+    return;
+  }
+  
+  let fc = turf.featureCollection(features);
+  // Cluster using DBSCAN with 7 km max distance.
+  let clustered = turf.clustersDbscan(fc, 7, { units: 'kilometers' });
+  console.log("Clustered features:", clustered.features);
+  
+  // Group by cluster id (ignore noise: cluster === -1).
+  let clusters = {};
+  clustered.features.forEach(feature => {
+    let cid = feature.properties.cluster;
+    if (cid === undefined || cid < 0) return;
+    if (!clusters[cid]) clusters[cid] = [];
+    clusters[cid].push(feature);
+  });
+  console.log("Initial clusters:", clusters);
+  
+  // Build finalClusters array; if a cluster has >25 points, subdivide it.
+  finalClusters = [];
+  for (let cid in clusters) {
+    let clusterPoints = clusters[cid];
+    if (clusterPoints.length > 25) {
+      // Simple subdivision: sort by latitude and split into chunks of <=25.
+      clusterPoints.sort((a, b) => a.geometry.coordinates[1] - b.geometry.coordinates[1]);
+      let numSub = Math.ceil(clusterPoints.length / 25);
+      for (let i = 0; i < numSub; i++) {
+        let subPoints = clusterPoints.slice(i * 25, (i + 1) * 25);
+        let subId = cid + "_sub" + i;
+        finalClusters.push({ id: subId, features: subPoints });
+        // Assign sub-cluster id to matching locations.
+        subPoints.forEach(pt => {
+          // Match by coordinates (using a small tolerance).
+          allLocations.forEach(loc => {
+            let latVal = parseFloat(loc.Latitude);
+            let lngVal = parseFloat(loc.Longitude);
+            if (Math.abs(latVal - pt.geometry.coordinates[1]) < 1e-5 &&
+                Math.abs(lngVal - pt.geometry.coordinates[0]) < 1e-5) {
+              loc.cluster = subId;
+            }
+          });
+        });
+      }
+    } else {
+      finalClusters.push({ id: cid, features: clusterPoints });
+      clusterPoints.forEach(pt => {
+        allLocations.forEach(loc => {
+          let latVal = parseFloat(loc.Latitude);
+          let lngVal = parseFloat(loc.Longitude);
+          if (Math.abs(latVal - pt.geometry.coordinates[1]) < 1e-5 &&
+              Math.abs(lngVal - pt.geometry.coordinates[0]) < 1e-5) {
+            loc.cluster = cid;
+          }
+        });
+      });
+    }
+  }
+  console.log("Final clusters:", finalClusters);
+
+  // Compute centroids and raw zone circles for each final cluster.
+  let clusterData = finalClusters.map(cluster => {
+    // Build feature collection for this cluster.
+    let fcCluster = turf.featureCollection(cluster.features);
+    let centroidFeature = turf.centroid(fcCluster);
+    let centroid = centroidFeature.geometry.coordinates; // [lng, lat]
+    
+    // Compute maximum distance from centroid.
+    let maxDist = 0;
+    cluster.features.forEach(pt => {
+      let d = turf.distance(centroidFeature, pt, { units: 'kilometers' });
+      if (d > maxDist) maxDist = d;
+    });
+    // Add 10% buffer.
+    maxDist *= 1.1;
+    return {
+      id: cluster.id,
+      centroid: centroid,
+      radius: maxDist
+    };
+  });
+  console.log("Cluster data:", clusterData);
+
+  // Compute Voronoi cells for cluster centroids to "clip" the zones so they do not overlap.
+  let centroidFeatures = clusterData.map(cd => turf.point(cd.centroid, { id: cd.id }));
+  let centroidFC = turf.featureCollection(centroidFeatures);
+  // Define a bounding box that covers your area (adjust as needed).
+  let bbox = [-180, -90, 180, 90];
+  let voronoiPolygons = turf.voronoi(centroidFC, { bbox: bbox });
+  console.log("Voronoi polygons:", voronoiPolygons);
+  
+  // For each cluster, create a raw circle polygon (using turf.circle) then intersect it with its Voronoi cell.
+  clusterData.forEach(cd => {
+    let rawCircle = turf.circle(cd.centroid, cd.radius, { steps: 64, units: 'kilometers' });
+    // Find the corresponding Voronoi cell for this cluster by matching id.
+    let cell = null;
+    if (voronoiPolygons && voronoiPolygons.features) {
+      voronoiPolygons.features.forEach(poly => {
+        if (poly.properties && poly.properties.site && poly.properties.site.id == cd.id) {
+          cell = poly;
+        }
+      });
+      // If not found by id (since turf.voronoi may not carry the id), match by centroid containment.
+      if (!cell) {
+        voronoiPolygons.features.forEach(poly => {
+          if (turf.booleanPointInPolygon(turf.point(cd.centroid), poly)) {
+            cell = poly;
+          }
+        });
+      }
+    }
+    let finalZone;
+    if (cell) {
+      // Clip the raw circle with the Voronoi cell.
+      finalZone = turf.intersect(rawCircle, cell);
+    } else {
+      finalZone = rawCircle;
+    }
+    cd.zoneGeoJSON = finalZone;
+  });
+  
+  // Draw the final zones on the map.
+  clusterData.forEach((cd, idx) => {
+    if (!cd.zoneGeoJSON) return;
+    // Convert GeoJSON polygon coordinates to google.maps LatLng array.
+    // cd.zoneGeoJSON.geometry.coordinates is an array of linear rings; we take the first.
+    let coords = cd.zoneGeoJSON.geometry.coordinates[0];
+    let path = coords.map(coord => ({ lat: coord[1], lng: coord[0] }));
+    let color = clusterColorPalette[idx % clusterColorPalette.length];
+    let polygon = new google.maps.Polygon({
+      paths: path,
+      strokeColor: color,
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: color,
+      fillOpacity: 0.35,
+      map: map
+    });
+    // Save polygon keyed by cluster id.
+    clusterZones[cd.id] = polygon;
+  });
+  
+  // Store final cluster data globally for filter zooming.
+  finalClusters = clusterData;
+  console.log("Service zones (non-overlapping) created for clusters:", finalClusters.map(c => c.id));
+}
+
 function updateClusterFilter() {
   // Create or get the container for cluster filters.
   let filterContainer = document.getElementById('clusterFilter');
   if (!filterContainer) {
     filterContainer = document.createElement('div');
     filterContainer.id = 'clusterFilter';
-    // Insert the container above the map.
     const container = document.querySelector('.container');
     container.insertBefore(filterContainer, document.getElementById('map'));
   }
   filterContainer.innerHTML = "<strong>Clusters: </strong>";
   
-  // Create a checkbox for each cluster (from clusterCircles).
-  let clusterIds = Object.keys(clusterCircles);
-  clusterIds.forEach(clusterId => {
+  // Create a checkbox for each cluster.
+  finalClusters.forEach(cd => {
     let checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
-    checkbox.id = 'cluster_' + clusterId;
+    checkbox.id = 'cluster_' + cd.id;
     checkbox.checked = true;
     checkbox.addEventListener('change', function() {
       if (this.checked) {
-        clusterCircles[clusterId].setMap(map);
+        if (clusterZones[cd.id]) clusterZones[cd.id].setMap(map);
       } else {
-        clusterCircles[clusterId].setMap(null);
+        if (clusterZones[cd.id]) clusterZones[cd.id].setMap(null);
       }
     });
     let label = document.createElement('label');
     label.htmlFor = checkbox.id;
-    label.textContent = "Cluster " + clusterId;
+    // Make label clickable to zoom to the cluster.
+    label.style.cursor = "pointer";
+    label.textContent = "Cluster " + cd.id;
+    label.addEventListener('click', function() {
+      // Compute bounds for the polygon and fit map.
+      if (clusterZones[cd.id]) {
+        let bounds = new google.maps.LatLngBounds();
+        clusterZones[cd.id].getPath().forEach(point => bounds.extend(point));
+        map.fitBounds(bounds);
+      }
+    });
     filterContainer.appendChild(checkbox);
     filterContainer.appendChild(label);
     filterContainer.appendChild(document.createTextNode(" ")); // spacing
