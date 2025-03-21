@@ -53,10 +53,7 @@ function addMarkers(filter) {
   console.log("Total CSV rows:", allLocations.length);
   
   allLocations.forEach(function(location, index) {
-    // Log keys to see header names
     console.log(`Row ${index} keys:`, Object.keys(location));
-    
-    // Support both lowercase and capitalized headers for coordinates.
     const lat = parseFloat(location.lat || location.Latitude);
     const lng = parseFloat(location.lng || location.Longitude);
 
@@ -65,7 +62,6 @@ function addMarkers(filter) {
       return;
     }
 
-    // Support both lowercase and capitalized headers for type.
     const type = location.type || location.Type;
     if (filter === 'All' || type === filter) {
       let marker = new google.maps.Marker({
@@ -73,8 +69,8 @@ function addMarkers(filter) {
         map: map,
         title: location.name || location.Name,
         icon: {
-          url: "https://maps.google.com/mapfiles/kml/shapes/cycling.png",
-          scaledSize: new google.maps.Size(20, 20) // Smaller marker size
+          url: "https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Shopfront%20Sammy%20Logo.png",
+          scaledSize: new google.maps.Size(20, 20) // Adjust size as needed
         }
       });
 
@@ -83,7 +79,7 @@ function addMarkers(filter) {
       });
 
       marker.addListener("click", function() {
-        // Zoom in and center the map on this marker when clicked.
+        // Zoom in and center on the marker when clicked
         map.setZoom(15);
         map.setCenter(marker.getPosition());
         infoWindow.open(map, marker);
