@@ -3,10 +3,9 @@ let markers = [];
 let infoWindows = [];
 let allLocations = [];
 let clusterZones = {}; // Key: final cluster id, value: google.maps.Polygon
-let finalClusters = []; // Array of cluster objects: { id, locations, centroid, radius, zoneGeoJSON }
+let finalClusters = []; // Array of cluster objects: { id, features }
 const defaultCenter = { lat: -27.5, lng: 153.0 };
 const defaultZoom = 7;
-
 const clusterColorPalette = [
   "#FF5733", "#33FF57", "#3357FF", "#F39C12",
   "#8E44AD", "#16A085", "#D35400", "#27AE60",
@@ -70,7 +69,7 @@ function addMarkers() {
   console.log("Total CSV rows:", allLocations.length);
   
   allLocations.forEach((location, index) => {
-    // Expected headers: Name, Address, Latitude, Longitude
+    // Expected headers: Name, Address, Latitude, Longitude.
     const lat = parseFloat(location.Latitude);
     const lng = parseFloat(location.Longitude);
     if (isNaN(lat) || isNaN(lng)) {
@@ -88,7 +87,6 @@ function addMarkers() {
       }
     });
     
-    // Append cluster info (if assigned later in processClustering)
     let clusterText = (location.cluster !== undefined) ? "Cluster: " + location.cluster : "No cluster";
     let infoWindow = new google.maps.InfoWindow({
       content: `<strong>${location.Name}</strong><br>${location.Address}<br>${clusterText}`
@@ -128,8 +126,6 @@ function updateSiteCount() {
   }
 }
 
-// ------------------- Clustering & Service Zones -------------------
-
 function processClustering() {
   // Convert locations to GeoJSON Points.
   let features = allLocations.map(loc => {
@@ -145,35 +141,34 @@ function processClustering() {
   }
   
   let fc = turf.featureCollection(features);
-  // Cluster using DBSCAN with 7 km max distance.
-  let clustered = turf.clustersDbscan(fc, 7, { units: 'kilometers' });
+  // Use DBSCAN with a 7 km threshold and minPoints: 1 so every point is clustered.
+  let clustered = turf.clustersDbscan(fc, 7, { units: 'kilometers', minPoints: 1 });
   console.log("Clustered features:", clustered.features);
   
-  // Group by cluster id (ignore noise: cluster === -1).
+  // Group features by their cluster id.
   let clusters = {};
   clustered.features.forEach(feature => {
     let cid = feature.properties.cluster;
-    if (cid === undefined || cid < 0) return;
+    // Every point should have a cluster id now.
+    if (cid === undefined) return;
     if (!clusters[cid]) clusters[cid] = [];
     clusters[cid].push(feature);
   });
   console.log("Initial clusters:", clusters);
   
-  // Build finalClusters array; if a cluster has >25 points, subdivide it.
+  // Build finalClusters array; subdivide any cluster with more than 25 points.
   finalClusters = [];
   for (let cid in clusters) {
     let clusterPoints = clusters[cid];
     if (clusterPoints.length > 25) {
-      // Simple subdivision: sort by latitude and split into chunks of <=25.
+      // Simple subdivision: sort by latitude and split sequentially.
       clusterPoints.sort((a, b) => a.geometry.coordinates[1] - b.geometry.coordinates[1]);
       let numSub = Math.ceil(clusterPoints.length / 25);
       for (let i = 0; i < numSub; i++) {
         let subPoints = clusterPoints.slice(i * 25, (i + 1) * 25);
         let subId = cid + "_sub" + i;
         finalClusters.push({ id: subId, features: subPoints });
-        // Assign sub-cluster id to matching locations.
         subPoints.forEach(pt => {
-          // Match by coordinates (using a small tolerance).
           allLocations.forEach(loc => {
             let latVal = parseFloat(loc.Latitude);
             let lngVal = parseFloat(loc.Longitude);
@@ -185,8 +180,8 @@ function processClustering() {
         });
       }
     } else {
-      finalClusters.push({ id: cid, features: clusterPoints });
-      clusterPoints.forEach(pt => {
+      finalClusters.push({ id: cid, features: clusters[cid] });
+      clusters[cid].forEach(pt => {
         allLocations.forEach(loc => {
           let latVal = parseFloat(loc.Latitude);
           let lngVal = parseFloat(loc.Longitude);
@@ -199,73 +194,47 @@ function processClustering() {
     }
   }
   console.log("Final clusters:", finalClusters);
-
-  // Compute centroids and raw zone circles for each final cluster.
+  
+  // Compute centroids and create raw circle zones for each final cluster.
   let clusterData = finalClusters.map(cluster => {
-    // Build feature collection for this cluster.
     let fcCluster = turf.featureCollection(cluster.features);
     let centroidFeature = turf.centroid(fcCluster);
     let centroid = centroidFeature.geometry.coordinates; // [lng, lat]
-    
-    // Compute maximum distance from centroid.
     let maxDist = 0;
     cluster.features.forEach(pt => {
       let d = turf.distance(centroidFeature, pt, { units: 'kilometers' });
       if (d > maxDist) maxDist = d;
     });
-    // Add 10% buffer.
-    maxDist *= 1.1;
-    return {
-      id: cluster.id,
-      centroid: centroid,
-      radius: maxDist
-    };
+    maxDist *= 1.1; // Buffer.
+    return { id: cluster.id, centroid: centroid, radius: maxDist };
   });
   console.log("Cluster data:", clusterData);
-
-  // Compute Voronoi cells for cluster centroids to "clip" the zones so they do not overlap.
+  
+  // Compute Voronoi cells for cluster centroids.
   let centroidFeatures = clusterData.map(cd => turf.point(cd.centroid, { id: cd.id }));
   let centroidFC = turf.featureCollection(centroidFeatures);
-  // Define a bounding box that covers your area (adjust as needed).
-  let bbox = [-180, -90, 180, 90];
+  let bbox = [-180, -90, 180, 90]; // Global bbox.
   let voronoiPolygons = turf.voronoi(centroidFC, { bbox: bbox });
   console.log("Voronoi polygons:", voronoiPolygons);
   
-  // For each cluster, create a raw circle polygon (using turf.circle) then intersect it with its Voronoi cell.
+  // For each cluster, create a raw circle (using turf.circle) and clip it with its Voronoi cell.
   clusterData.forEach(cd => {
     let rawCircle = turf.circle(cd.centroid, cd.radius, { steps: 64, units: 'kilometers' });
-    // Find the corresponding Voronoi cell for this cluster by matching id.
     let cell = null;
     if (voronoiPolygons && voronoiPolygons.features) {
       voronoiPolygons.features.forEach(poly => {
-        if (poly.properties && poly.properties.site && poly.properties.site.id == cd.id) {
+        if (turf.booleanPointInPolygon(turf.point(cd.centroid), poly)) {
           cell = poly;
         }
       });
-      // If not found by id (since turf.voronoi may not carry the id), match by centroid containment.
-      if (!cell) {
-        voronoiPolygons.features.forEach(poly => {
-          if (turf.booleanPointInPolygon(turf.point(cd.centroid), poly)) {
-            cell = poly;
-          }
-        });
-      }
     }
-    let finalZone;
-    if (cell) {
-      // Clip the raw circle with the Voronoi cell.
-      finalZone = turf.intersect(rawCircle, cell);
-    } else {
-      finalZone = rawCircle;
-    }
+    let finalZone = cell ? turf.intersect(rawCircle, cell) : rawCircle;
     cd.zoneGeoJSON = finalZone;
   });
   
-  // Draw the final zones on the map.
+  // Draw final zones as polygons on the map with distinct colors.
   clusterData.forEach((cd, idx) => {
     if (!cd.zoneGeoJSON) return;
-    // Convert GeoJSON polygon coordinates to google.maps LatLng array.
-    // cd.zoneGeoJSON.geometry.coordinates is an array of linear rings; we take the first.
     let coords = cd.zoneGeoJSON.geometry.coordinates[0];
     let path = coords.map(coord => ({ lat: coord[1], lng: coord[0] }));
     let color = clusterColorPalette[idx % clusterColorPalette.length];
@@ -278,17 +247,15 @@ function processClustering() {
       fillOpacity: 0.35,
       map: map
     });
-    // Save polygon keyed by cluster id.
     clusterZones[cd.id] = polygon;
   });
   
-  // Store final cluster data globally for filter zooming.
+  // Save final cluster data globally for filter zooming.
   finalClusters = clusterData;
-  console.log("Service zones (non-overlapping) created for clusters:", finalClusters.map(c => c.id));
+  console.log("Service zones created for clusters:", finalClusters.map(c => c.id));
 }
 
 function updateClusterFilter() {
-  // Create or get the container for cluster filters.
   let filterContainer = document.getElementById('clusterFilter');
   if (!filterContainer) {
     filterContainer = document.createElement('div');
@@ -298,7 +265,6 @@ function updateClusterFilter() {
   }
   filterContainer.innerHTML = "<strong>Clusters: </strong>";
   
-  // Create a checkbox for each cluster.
   finalClusters.forEach(cd => {
     let checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
@@ -313,11 +279,9 @@ function updateClusterFilter() {
     });
     let label = document.createElement('label');
     label.htmlFor = checkbox.id;
-    // Make label clickable to zoom to the cluster.
     label.style.cursor = "pointer";
     label.textContent = "Cluster " + cd.id;
     label.addEventListener('click', function() {
-      // Compute bounds for the polygon and fit map.
       if (clusterZones[cd.id]) {
         let bounds = new google.maps.LatLngBounds();
         clusterZones[cd.id].getPath().forEach(point => bounds.extend(point));
@@ -326,7 +290,7 @@ function updateClusterFilter() {
     });
     filterContainer.appendChild(checkbox);
     filterContainer.appendChild(label);
-    filterContainer.appendChild(document.createTextNode(" ")); // spacing
+    filterContainer.appendChild(document.createTextNode(" "));
   });
 }
 
