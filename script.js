@@ -3,7 +3,7 @@ let markers = [];
 let allLocations = [];
 
 function loadScript() {
-  const apiKey = 'AIzaSyDM5PYHiEkRV4tCdBpP7tKrRtobVXoCzSo'; // Replace with your API key if needed
+  const apiKey = 'AIzaSyDM5PYHiEkRV4tCdBpP7tKrRtobVXoCzSo'; // Replace if needed
   const script = document.createElement('script');
   script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
   script.async = true;
@@ -22,24 +22,21 @@ function initMap() {
     return;
   }
 
-  // Initialize the map using default ROADMAP type.
+  // Initialize the map using the default ROADMAP view.
   map = new google.maps.Map(document.getElementById('map'), {
     zoom: 7,
     center: { lat: -27.5, lng: 153.0 },
     mapTypeId: google.maps.MapTypeId.ROADMAP
   });
 
-  // Load CSV data using PapaParse from the raw GitHub URL
+  // Load CSV data using PapaParse from the GitHub raw URL
   Papa.parse("https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Untitled%20Spreadsheet.csv", {
     download: true,
     header: true,
     complete: function(results) {
       console.log("CSV data loaded:", results.data);
-      if (results.data.length === 0) {
-        console.error("CSV data is empty. Verify that your CSV has data and the correct header row.");
-      }
       allLocations = results.data;
-      addMarkers('All');
+      addMarkers();
     },
     error: function(err) {
       console.error("Error loading CSV file:", err);
@@ -48,45 +45,45 @@ function initMap() {
   });
 }
 
-function addMarkers(filter) {
+function addMarkers() {
   clearMarkers();
   console.log("Total CSV rows:", allLocations.length);
   
   allLocations.forEach(function(location, index) {
+    // Log row keys for debugging
     console.log(`Row ${index} keys:`, Object.keys(location));
-    const lat = parseFloat(location.lat || location.Latitude);
-    const lng = parseFloat(location.lng || location.Longitude);
-
+    
+    // Use the provided CSV headers: "Latitude" and "Longitude"
+    const lat = parseFloat(location.Latitude);
+    const lng = parseFloat(location.Longitude);
+    
     if (isNaN(lat) || isNaN(lng)) {
-      console.warn(`Invalid coordinates for row ${index}:`, location);
+      console.warn(`Invalid coordinates at row ${index}:`, location);
       return;
     }
-
-    const type = location.type || location.Type;
-    if (filter === 'All' || type === filter) {
-      let marker = new google.maps.Marker({
-        position: { lat: lat, lng: lng },
-        map: map,
-        title: location.name || location.Name,
-        icon: {
-          url: "https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Shopfront%20Sammy%20Logo.png",
-          scaledSize: new google.maps.Size(20, 20) // Adjust size as needed
-        }
-      });
-
-      let infoWindow = new google.maps.InfoWindow({
-        content: `<strong>${location.name || location.Name}</strong><br>${location.address || location.Address}`
-      });
-
-      marker.addListener("click", function() {
-        // Zoom in and center on the marker when clicked
-        map.setZoom(15);
-        map.setCenter(marker.getPosition());
-        infoWindow.open(map, marker);
-      });
-
-      markers.push(marker);
-    }
+    
+    let marker = new google.maps.Marker({
+      position: { lat: lat, lng: lng },
+      map: map,
+      title: location.Name,
+      icon: {
+        url: "https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Shopfront%20Sammy%20Logo.png",
+        scaledSize: new google.maps.Size(20, 20) // Adjust the size as needed
+      }
+    });
+    
+    let infoWindow = new google.maps.InfoWindow({
+      content: `<strong>${location.Name}</strong><br>${location.Address}`
+    });
+    
+    marker.addListener("click", function() {
+      // When a marker is clicked, zoom in and center on that location
+      map.setZoom(15);
+      map.setCenter(marker.getPosition());
+      infoWindow.open(map, marker);
+    });
+    
+    markers.push(marker);
   });
   
   console.log("Markers added:", markers.length);
