@@ -73,7 +73,7 @@ function addMarkers() {
       title: location.Name,
       icon: {
         url: "https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Shopfront%20Sammy%20Logo.png",
-        scaledSize: new google.maps.Size(20, 20) // Adjust size as needed.
+        scaledSize: new google.maps.Size(50, 50) // Adjust size as needed.
       }
     });
     
