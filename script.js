@@ -2,7 +2,7 @@ let map;
 let markers = [];
 let infoWindows = [];
 let allLocations = [];
-let clusterZones = {}; // Key: final cluster id, value: google.maps.Polygon
+let clusterZones = {}; // Key: final cluster id (whole number), value: google.maps.Polygon
 let finalClusters = []; // Array of cluster objects: { id, features, centroid, radius, zoneGeoJSON }
 const defaultCenter = { lat: -27.5, lng: 153.0 };
 const defaultZoom = 7;
@@ -85,8 +85,9 @@ function addMarkers() {
         scaledSize: new google.maps.Size(20, 20)
       }
     });
-    
-    // Info window now shows only name and address.
+    // Assign the cluster id (if any) to the marker.
+    marker.cluster = location.cluster; 
+
     let infoWindow = new google.maps.InfoWindow({
       content: `<strong>${location.Name}</strong><br>${location.Address}`
     });
@@ -121,7 +122,9 @@ function resetView() {
 function updateSiteCount() {
   const siteCountElem = document.getElementById('siteCount');
   if (siteCountElem) {
-    siteCountElem.textContent = "Total Sites: " + markers.length;
+    // Optionally, count only markers currently visible.
+    let visibleCount = markers.filter(marker => marker.getMap() !== null).length;
+    siteCountElem.textContent = "Total Sites: " + visibleCount;
   }
 }
 
@@ -140,7 +143,7 @@ function processClustering() {
   }
   
   let fc = turf.featureCollection(features);
-  // Use DBSCAN with a 7 km threshold and minPoints: 1 so every point is clustered.
+  // Use DBSCAN with a 7 km threshold and minPoints: 1 ensures every point is clustered.
   let clustered = turf.clustersDbscan(fc, 7, { units: 'kilometers', minPoints: 1 });
   console.log("Clustered features:", clustered.features);
   
@@ -162,8 +165,9 @@ function processClustering() {
   });
   console.log("Initial clusters:", clusters);
   
-  // Build finalClusters array; subdivide any cluster with more than 25 points.
+  // Build finalClusters array with whole number IDs.
   finalClusters = [];
+  let finalClusterIdCounter = 0;
   for (let cid in clusters) {
     let clusterPoints = clusters[cid];
     if (clusterPoints.length > 25) {
@@ -171,36 +175,39 @@ function processClustering() {
       let numSub = Math.ceil(clusterPoints.length / 25);
       for (let i = 0; i < numSub; i++) {
         let subPoints = clusterPoints.slice(i * 25, (i + 1) * 25);
-        let subId = cid + "_sub" + i;
-        finalClusters.push({ id: subId, features: subPoints });
+        let newId = String(finalClusterIdCounter);
+        finalClusterIdCounter++;
+        finalClusters.push({ id: newId, features: subPoints });
         subPoints.forEach(pt => {
           allLocations.forEach(loc => {
             let latVal = parseFloat(loc.Latitude);
             let lngVal = parseFloat(loc.Longitude);
             if (Math.abs(latVal - pt.geometry.coordinates[1]) < 1e-5 &&
                 Math.abs(lngVal - pt.geometry.coordinates[0]) < 1e-5) {
-              loc.cluster = subId;
+              loc.cluster = newId;
             }
           });
         });
       }
     } else {
-      finalClusters.push({ id: cid, features: clusters[cid] });
+      let newId = String(finalClusterIdCounter);
+      finalClusterIdCounter++;
+      finalClusters.push({ id: newId, features: clusters[cid] });
       clusters[cid].forEach(pt => {
         allLocations.forEach(loc => {
           let latVal = parseFloat(loc.Latitude);
           let lngVal = parseFloat(loc.Longitude);
           if (Math.abs(latVal - pt.geometry.coordinates[1]) < 1e-5 &&
               Math.abs(lngVal - pt.geometry.coordinates[0]) < 1e-5) {
-            loc.cluster = cid;
+            loc.cluster = newId;
           }
         });
       });
     }
   }
-  console.log("Final clusters:", finalClusters);
+  console.log("Final clusters (whole numbers):", finalClusters);
   
-  // Compute centroids and create raw circle zones for each final cluster.
+  // Compute centroids and raw circle zones for each final cluster.
   let clusterData = finalClusters.map(cluster => {
     let fcCluster = turf.featureCollection(cluster.features);
     let centroidFeature = turf.centroid(fcCluster);
@@ -210,7 +217,7 @@ function processClustering() {
       let d = turf.distance(centroidFeature, pt, { units: 'kilometers' });
       if (d > maxDist) maxDist = d;
     });
-    maxDist *= 1.1; // Buffer.
+    maxDist *= 1.1; // Add a 10% buffer.
     return { id: cluster.id, centroid: centroid, radius: maxDist };
   });
   console.log("Cluster data:", clusterData);
@@ -276,11 +283,19 @@ function updateClusterFilter() {
     checkbox.classList.add('modern-checkbox');
     checkbox.checked = true;
     checkbox.addEventListener('change', function() {
+      // Toggle service zone polygon...
       if (this.checked) {
         if (clusterZones[cd.id]) clusterZones[cd.id].setMap(map);
       } else {
         if (clusterZones[cd.id]) clusterZones[cd.id].setMap(null);
       }
+      // Toggle markers belonging to this cluster.
+      markers.forEach(marker => {
+        if (marker.cluster === cd.id) {
+          marker.setMap(this.checked ? map : null);
+        }
+      });
+      updateSiteCount();
     });
     let label = document.createElement('label');
     label.htmlFor = checkbox.id;
