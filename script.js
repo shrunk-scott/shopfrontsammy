@@ -31,13 +31,13 @@ function initMap() {
     alert('Google Maps failed to load. Please check API key permissions.');
     return;
   }
-
+  
   map = new google.maps.Map(document.getElementById('map'), {
     zoom: defaultZoom,
     center: defaultCenter,
     mapTypeId: google.maps.MapTypeId.ROADMAP
   });
-
+  
   // Attach Reset View button event.
   const resetBtn = document.getElementById('resetBtn');
   if (resetBtn) {
@@ -45,7 +45,7 @@ function initMap() {
   } else {
     console.warn("Reset button not found.");
   }
-
+  
   Papa.parse("https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Untitled%20Spreadsheet.csv", {
     download: true,
     header: true,
@@ -140,15 +140,23 @@ function processClustering() {
   }
   
   let fc = turf.featureCollection(features);
-  // Use DBSCAN with a 7 km threshold and ensure every point is clustered.
+  // Use DBSCAN with a 7 km threshold and minPoints: 1 so every point becomes a cluster.
   let clustered = turf.clustersDbscan(fc, 7, { units: 'kilometers', minPoints: 1 });
   console.log("Clustered features:", clustered.features);
+  
+  // Ensure no feature remains as noise. For any feature with cluster -1 or undefined, assign a unique id.
+  let noiseId = 0;
+  clustered.features.forEach(feature => {
+    if (feature.properties.cluster === undefined || feature.properties.cluster < 0) {
+      feature.properties.cluster = "noise_" + noiseId;
+      noiseId++;
+    }
+  });
   
   // Group features by their cluster id.
   let clusters = {};
   clustered.features.forEach(feature => {
     let cid = feature.properties.cluster;
-    if (cid === undefined) return;
     if (!clusters[cid]) clusters[cid] = [];
     clusters[cid].push(feature);
   });
@@ -159,6 +167,7 @@ function processClustering() {
   for (let cid in clusters) {
     let clusterPoints = clusters[cid];
     if (clusterPoints.length > 25) {
+      // Simple subdivision: sort by latitude and split sequentially.
       clusterPoints.sort((a, b) => a.geometry.coordinates[1] - b.geometry.coordinates[1]);
       let numSub = Math.ceil(clusterPoints.length / 25);
       for (let i = 0; i < numSub; i++) {
@@ -202,7 +211,7 @@ function processClustering() {
       let d = turf.distance(centroidFeature, pt, { units: 'kilometers' });
       if (d > maxDist) maxDist = d;
     });
-    maxDist *= 1.1;
+    maxDist *= 1.1; // Buffer.
     return { id: cluster.id, centroid: centroid, radius: maxDist };
   });
   console.log("Cluster data:", clusterData);
