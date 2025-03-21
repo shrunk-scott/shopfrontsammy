@@ -1,6 +1,8 @@
 let map;
 let markers = [];
 let allLocations = [];
+const defaultCenter = { lat: -27.5, lng: 153.0 };
+const defaultZoom = 7;
 
 function loadScript() {
   const apiKey = 'AIzaSyDM5PYHiEkRV4tCdBpP7tKrRtobVXoCzSo'; // Replace if needed
@@ -22,14 +24,17 @@ function initMap() {
     return;
   }
 
-  // Initialize the map using the default ROADMAP view.
+  // Initialize the map with default ROADMAP view.
   map = new google.maps.Map(document.getElementById('map'), {
-    zoom: 7,
-    center: { lat: -27.5, lng: 153.0 },
+    zoom: defaultZoom,
+    center: defaultCenter,
     mapTypeId: google.maps.MapTypeId.ROADMAP
   });
 
-  // Load CSV data using PapaParse from the GitHub raw URL
+  // Add event listener for the Reset View button.
+  document.getElementById('resetBtn').addEventListener('click', resetView);
+
+  // Load CSV data using PapaParse from the GitHub raw URL.
   Papa.parse("https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Untitled%20Spreadsheet.csv", {
     download: true,
     header: true,
@@ -50,10 +55,10 @@ function addMarkers() {
   console.log("Total CSV rows:", allLocations.length);
   
   allLocations.forEach(function(location, index) {
-    // Log row keys for debugging
+    // Log keys for debugging.
     console.log(`Row ${index} keys:`, Object.keys(location));
     
-    // Use the provided CSV headers: "Latitude" and "Longitude"
+    // Use the CSV headers "Latitude" and "Longitude".
     const lat = parseFloat(location.Latitude);
     const lng = parseFloat(location.Longitude);
     
@@ -68,7 +73,7 @@ function addMarkers() {
       title: location.Name,
       icon: {
         url: "https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Shopfront%20Sammy%20Logo.png",
-        scaledSize: new google.maps.Size(20, 20) // Adjust the size as needed
+        scaledSize: new google.maps.Size(20, 20) // Adjust size as needed.
       }
     });
     
@@ -77,7 +82,7 @@ function addMarkers() {
     });
     
     marker.addListener("click", function() {
-      // When a marker is clicked, zoom in and center on that location
+      // Zoom in and center on the marker when clicked.
       map.setZoom(15);
       map.setCenter(marker.getPosition());
       infoWindow.open(map, marker);
@@ -92,6 +97,11 @@ function addMarkers() {
 function clearMarkers() {
   markers.forEach(marker => marker.setMap(null));
   markers = [];
+}
+
+function resetView() {
+  map.setZoom(defaultZoom);
+  map.setCenter(defaultCenter);
 }
 
 window.onload = loadScript;
