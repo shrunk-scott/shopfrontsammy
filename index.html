@@ -4,24 +4,25 @@
   <meta charset="UTF-8">
   <title>Site Locations</title>
   <link rel="stylesheet" href="styles.css">
-  <!-- Load PapaParse from CDN -->
+  <!-- Load external libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-  <!-- Load Turf.js for clustering/service zones -->
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 </head>
 <body>
   <div class="container">
-    <!-- Centered Logo -->
+    <!-- Header with centered logo -->
     <header>
       <img src="https://cdn.prod.website-files.com/675a6c39b29c1466a4306560/6760fd79aa53c194bc2f4933_scroller-mascot.svg" alt="Logo" class="logo">
     </header>
     <h1>Site Locations</h1>
-    <!-- Site Count Display -->
+    <!-- Display total sites -->
     <div id="siteCount">Total Sites: 0</div>
-    <!-- Reset View Button -->
+    <!-- Reset view button -->
     <button id="resetBtn">Reset View</button>
-    <!-- Map Container -->
+    <!-- Map container (framed by CSS) -->
     <div id="map"></div>
+    <!-- Cluster filter UI container (will be populated by script.js) -->
+    <div id="clusterFilter"></div>
   </div>
   <script src="script.js"></script>
 </body>
