@@ -1,4 +1,38 @@
-let map;
+// No longer need this function
+// function createLocationListContainer() {
+//   // Function content removed
+// }// Function to load Font Awesome for icons
+function loadFontAwesome() {
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css';
+  document.head.appendChild(link);
+}// Function to adjust marker size based on current zoom level
+function adjustMarkersForZoom() {
+  const currentZoom = map.getZoom();
+  let markerSize;
+  
+  // Scale marker size based on zoom level
+  if (currentZoom >= 18) {
+    markerSize = 40; // Very close zoom
+  } else if (currentZoom >= 15) {
+    markerSize = 35; // Close zoom
+  } else if (currentZoom >= 12) {
+    markerSize = 30; // Medium zoom
+  } else if (currentZoom >= 9) {
+    markerSize = 25; // Far zoom
+  } else {
+    markerSize = 30; // Default size for very far zoom
+  }
+  
+  // Update all markers with new size
+  markers.forEach(marker => {
+    marker.setIcon({
+      url: "https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Shopfront%20Sammy%20Logo.png",
+      scaledSize: new google.maps.Size(markerSize, markerSize)
+    });
+  });
+}let map;
 let markers = [];
 let infoWindows = [];
 let allLocations = [];
@@ -45,12 +79,45 @@ function initMap() {
     mapTypeId: google.maps.MapTypeId.ROADMAP
   });
   
+  // Add zoom changed event listener to handle marker sizes
+  map.addListener('zoom_changed', function() {
+    adjustMarkersForZoom();
+  });
+  
   const resetBtn = document.getElementById('resetBtn');
   if (resetBtn) {
     resetBtn.addEventListener('click', resetView);
   } else {
     console.warn("Reset button not found.");
   }
+  
+  // Create location list container - much simpler approach
+  const locationListHTML = `
+    <div id="locationListOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9998;">
+      <div id="locationList" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:20px; max-width:500px; width:90%; max-height:80vh; border-radius:12px; box-shadow:0 5px 20px rgba(0,0,0,0.2); z-index:9999; overflow:hidden; display:flex; flex-direction:column; border:2px solid #1c1ce0;">
+        <h3 id="locationListTitle" style="margin-top:0; padding-bottom:10px; border-bottom:1px solid #eee; color:#1c1ce0;">Locations</h3>
+        <div id="locationListItems" style="overflow-y:auto; max-height:calc(80vh - 100px);"></div>
+        <button id="locationListClose" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:24px; cursor:pointer; color:#999;">×</button>
+      </div>
+    </div>
+  `;
+  
+  // Append to body
+  document.body.insertAdjacentHTML('beforeend', locationListHTML);
+  
+  // Add event listener for close button
+  document.getElementById('locationListClose').addEventListener('click', function() {
+    document.getElementById('locationListOverlay').style.display = 'none';
+  });
+  
+  // Close when clicking on the overlay background
+  document.getElementById('locationListOverlay').addEventListener('click', function(e) {
+    if (e.target === this) {
+      this.style.display = 'none';
+    }
+  });
+  
+  
   
   Papa.parse("https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Untitled%20Spreadsheet.csv", {
     download: true,
@@ -86,14 +153,18 @@ function addMarkers() {
     const lat = parseFloat(location.Latitude);
     const lng = parseFloat(location.Longitude);
     
+    // Initial marker size is larger now
     let marker = new google.maps.Marker({
       position: { lat: lat, lng: lng },
       map: map,
       title: location.Name,
       icon: {
         url: "https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Shopfront%20Sammy%20Logo.png",
-        scaledSize: new google.maps.Size(20, 20)
-      }
+        scaledSize: new google.maps.Size(30, 30)
+      },
+      // Improve marker visibility
+      optimized: false,
+      zIndex: 10
     });
     
     // Assign the marker its cluster id
@@ -420,25 +491,14 @@ function createClusterZones() {
       let color = clusterColorPalette[idx % clusterColorPalette.length];
       let polygon = createPolygonFromGeoJSON(cluster.zoneGeoJSON, color);
       
-      // Add click listener to zoom to cluster
+      // Add click listener to zoom to cluster and show locations
       polygon.addListener('click', function() {
         let bounds = new google.maps.LatLngBounds();
         this.getPath().forEach(point => bounds.extend(point));
         map.fitBounds(bounds);
         
-        // Show cluster info
-        let infoWindow = new google.maps.InfoWindow({
-          content: `<div>
-            <strong>Cluster ${cluster.id}</strong><br>
-            Sites: ${cluster.pointCount}<br>
-            Radius: ${cluster.radius.toFixed(2)} km
-          </div>`,
-          position: {
-            lat: cluster.centroid[1],
-            lng: cluster.centroid[0]
-          }
-        });
-        infoWindow.open(map);
+        // Show cluster info and locations
+        showClusterLocations(cluster.id);
       });
       
       clusterZones[cluster.id] = polygon;
@@ -571,7 +631,84 @@ function updateClusterFilter() {
   });
 }
 
-// Function to update all info windows with the latest cluster information
+// Function to show locations within a cluster - simplified approach
+function showClusterLocations(clusterId) {
+  console.log("Showing locations for cluster:", clusterId);
+  
+  // Get locations in this cluster
+  const clusterLocations = allLocations.filter(loc => loc.cluster === clusterId);
+  console.log("Found locations:", clusterLocations.length);
+  
+  // Get overlay and list elements
+  const overlay = document.getElementById('locationListOverlay');
+  const listTitle = document.getElementById('locationListTitle');
+  const listItems = document.getElementById('locationListItems');
+  
+  if (!overlay || !listTitle || !listItems) {
+    console.error("Location list elements not found!");
+    alert("Could not display location list. Please refresh the page and try again.");
+    return;
+  }
+  
+  // Update title
+  listTitle.textContent = `Cluster ${clusterId} Locations (${clusterLocations.length})`;
+  
+  // Clear previous items
+  listItems.innerHTML = '';
+  
+  // Sort locations alphabetically by name
+  clusterLocations.sort((a, b) => a.Name.localeCompare(b.Name));
+  
+  // Add each location to the list
+  clusterLocations.forEach(location => {
+    const itemHTML = `
+      <div class="location-item" style="padding:12px; border-bottom:1px solid #eef; cursor:pointer; transition:background-color 0.2s;" 
+           onmouseover="this.style.backgroundColor='#f0f4ff'" 
+           onmouseout="this.style.backgroundColor='transparent'">
+        <strong style="display:block; margin-bottom:5px;">${location.Name}</strong>
+        <div>${location.Address}</div>
+      </div>
+    `;
+    
+    listItems.insertAdjacentHTML('beforeend', itemHTML);
+    
+    // Get the element we just added
+    const item = listItems.lastElementChild;
+    
+    // Add click event
+    item.addEventListener('click', function() {
+      const lat = parseFloat(location.Latitude);
+      const lng = parseFloat(location.Longitude);
+      
+      // Find the corresponding marker
+      const marker = markers.find(m => {
+        const pos = m.getPosition();
+        return Math.abs(pos.lat() - lat) < 1e-5 && Math.abs(pos.lng() - lng) < 1e-5;
+      });
+      
+      if (marker) {
+        // Center on the marker
+        map.setCenter(marker.getPosition());
+        map.setZoom(16);
+        
+        // Open the info window
+        const infoWindowIndex = markers.indexOf(marker);
+        if (infoWindowIndex >= 0 && infoWindows[infoWindowIndex]) {
+          // Close any open info windows
+          infoWindows.forEach(iw => iw.close());
+          infoWindows[infoWindowIndex].open(map, marker);
+        }
+      }
+      
+      // Close the location list
+      overlay.style.display = 'none';
+    });
+  });
+  
+  // Show the container
+  overlay.style.display = 'block';
+}
+
 function updateInfoWindows() {
   markers.forEach((marker, index) => {
     const location = allLocations.find(loc => {
