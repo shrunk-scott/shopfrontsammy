@@ -57,6 +57,29 @@ header {
   margin-right: 15px;
 }
 
+/* Cluster controls styling */
+.clusters-header {
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+}
+
+.cluster-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+@media (max-width: 767px) {
+  .cluster-controls {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .cluster-controls .filter-button {
+    flex: 1;
+  }
+}
+
 h1 {
   color: var(--primary-dark);
   margin-bottom: 15px;
@@ -178,7 +201,7 @@ h1 {
   display: inline-block;
   margin: 5px 8px 5px 0;
   background-color: white;
-  padding: 6px 12px;
+  padding: 10px 15px;
   border-radius: var(--border-radius);
   border: 1px solid var(--light-blue);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -217,9 +240,10 @@ h1 {
 
 /* InfoWindow styling */
 .gm-style .gm-style-iw-c {
-  padding: 12px;
+  padding: 16px;
   border-radius: var(--border-radius);
   box-shadow: var(--shadow);
+  min-width: 250px;
 }
 
 .gm-style .gm-style-iw-d {
@@ -227,8 +251,22 @@ h1 {
   padding: 0 !important;
 }
 
+.gm-style .gm-style-iw-c .gm-style-iw-d div {
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+}
+
+.gm-style .gm-style-iw-c .gm-style-iw-d strong {
+  font-size: 18px !important;
+  margin-bottom: 5px !important;
+  display: block !important;
+}
+
 .gm-ui-hover-effect {
   opacity: 0.6 !important;
+  transform: scale(1.2) !important;
+  top: 2px !important;
+  right: 2px !important;
 }
 
 .gm-ui-hover-effect:hover {
@@ -253,46 +291,71 @@ h1 {
 
 @media (max-width: 767px) {
   body {
-    font-size: 14px;
+    font-size: 16px;
   }
   
   .container {
-    padding: 12px;
+    padding: 16px;
     border-radius: 0;
   }
   
   h1 {
-    font-size: 1.3rem;
+    font-size: 1.5rem;
+    margin-top: 10px;
   }
   
   .modern-button {
-    padding: 10px 16px;
-    font-size: 0.85rem;
+    padding: 12px 20px;
+    font-size: 1rem;
+    min-height: 44px;
+    min-width: 100px;
   }
   
   #siteCount {
-    font-size: 0.85rem;
-    padding: 8px 12px;
+    font-size: 1rem;
+    padding: 10px 16px;
+    width: 100%;
+    text-align: center;
+    margin-bottom: 12px;
   }
   
   .filter-item {
-    padding: 5px 10px;
-    margin: 3px;
-    display: inline-block;
+    padding: 10px 14px;
+    margin: 5px;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
   }
   
   .filter-text {
-    font-size: 0.8rem;
+    font-size: 1rem;
   }
   
   .filter-container {
-    max-height: 150px;
-    padding: 10px;
+    max-height: 200px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
   }
   
   .filter-button {
-    padding: 6px 10px;
-    font-size: 0.75rem;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    min-height: 44px;
+    min-width: 100px;
+    margin-bottom: 15px;
+  }
+  
+  .modern-checkbox {
+    width: 22px;
+    height: 22px;
+    margin-right: 10px;
+  }
+  
+  .color-indicator {
+    width: 18px;
+    height: 18px;
   }
 }
 
