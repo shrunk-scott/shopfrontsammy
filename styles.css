@@ -1,33 +1,4 @@
-/* InfoWindow styling */
-.gm-style .gm-style-iw-c {
-  padding: 16px;
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
-  min-width: 250px;
-}
-
-.gm-style .gm-style-iw-d {
-  overflow: hidden !important;
-  padding: 0 !important;
-}
-
-.gm-style .gm-style-iw-c .gm-style-iw-d div {
-  font-size: 16px !important;
-  line-height: 1.5 !important;
-}
-
-.gm-style .gm-style-iw-c .gm-style-iw-d strong {
-  font-size: 18px !important;
-  margin-bottom: 5px !important;
-  display: block !important;
-}
-
-.gm-ui-hover-effect {
-  opacity: 0.6 !important;
-  transform: scale(1.2) !important;
-  top: 2px !important;
-  right: 2px !important;
-}/* Modern CSS with blue palette - optimized for iPhone and mobile devices */
+/* Modern CSS with blue palette - optimized for iPhone and mobile devices */
 :root {
   --primary-blue: #1c1ce0;
   --primary-dark: #1c1ce0;
@@ -75,45 +46,25 @@ body {
 header {
   display: flex;
   align-items: center;
+  justify-content: center;
   margin-bottom: 20px;
   padding: 10px 0;
+  text-align: center;
 }
 
 .logo {
-  height: 50px;
+  height: 60px;
   width: auto;
   object-fit: contain;
-  margin-right: 15px;
-}
-
-/* Cluster controls styling */
-.clusters-header {
-  font-size: 1.1rem;
-  margin-bottom: 12px;
-}
-
-.cluster-controls {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-@media (max-width: 767px) {
-  .cluster-controls {
-    flex-direction: row;
-    justify-content: space-between;
-  }
-  
-  .cluster-controls .filter-button {
-    flex: 1;
-  }
 }
 
 h1 {
   color: var(--primary-dark);
   margin-bottom: 15px;
   font-weight: 600;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
+  text-align: center;
+  width: 100%;
 }
 
 #map {
@@ -172,138 +123,102 @@ h1 {
   font-size: 0.9rem;
 }
 
-/* Filter container styling */
+/* Filter container */
 .filter-container {
   background-color: var(--very-light-blue);
   padding: 15px;
   border-radius: var(--border-radius);
   margin-bottom: 15px;
   border: 1px solid var(--light-blue);
-  max-height: 180px;
+  max-height: 350px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: var(--primary-light) var(--very-light-blue);
 }
 
-.filter-container::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.filter-container::-webkit-scrollbar-track {
-  background: var(--very-light-blue);
-}
-
-.filter-container::-webkit-scrollbar-thumb {
-  background-color: var(--primary-light);
-  border-radius: 6px;
-}
-
-/* Checkbox styling */
-.modern-checkbox {
-  margin-right: 6px;
-  cursor: pointer;
-  width: 18px;
-  height: 18px;
-  accent-color: var(--primary-blue);
-}
-
-.filter-button {
-  background-color: var(--light-blue);
-  color: var(--primary-dark);
-  border: none;
-  border-radius: var(--border-radius);
-  padding: 14px 20px;
-  margin-right: 8px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  min-height: 50px;
-  min-width: 130px;
-}
-
-.filter-button:hover, .filter-button:focus {
-  background-color: var(--primary-light);
-  color: var(--text-dark);
-}
-
-.filter-item {
-  display: inline-block;
-  margin: 5px 8px 5px 0;
-  background-color: white;
-  padding: 10px 15px;
-  border-radius: var(--border-radius);
-  border: 1px solid var(--light-blue);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
-}
-
-.filter-item:hover {
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  border-color: var(--primary-light);
-}
-
-.filter-label {
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-}
-
-.color-indicator {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  margin-right: 6px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.filter-text {
-  font-size: 0.85rem;
-  color: var(--text-dark);
-  font-weight: 500;
-}
-
-.filter-text:hover {
-  color: var(--primary-blue);
-}
-
-/* Location list styling */
-.location-list-container {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  max-width: 90%;
-  width: 500px;
-  max-height: 80vh;
-  background-color: white;
-  border-radius: var(--border-radius);
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-  z-index: 9999;
-  padding: 20px;
-  display: none;
-  overflow: hidden;
-  flex-direction: column;
-  border: 2px solid var(--primary-blue);
-}
-
-.location-list-title {
-  font-size: 1.3rem;
+/* Filter header */
+.filter-header {
   margin-bottom: 15px;
-  color: var(--primary-dark);
-  padding-bottom: 10px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--light-blue);
 }
 
-.location-list-items {
-  overflow-y: auto;
-  max-height: calc(80vh - 100px);
+.clusters-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 10px;
 }
 
+.cluster-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.control-button {
+  background-color: var(--primary-blue);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 10px 15px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.control-button:hover {
+  background-color: var(--primary-dark);
+}
+
+.cluster-instruction {
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+}
+
+/* Cluster buttons container */
+.cluster-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Individual cluster button */
+.cluster-btn {
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border: 2px solid var(--light-blue);
+  border-radius: var(--border-radius);
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 170px;
+}
+
+.cluster-btn:hover {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.cluster-btn.active {
+  border-color: var(--primary-blue);
+  background-color: var(--very-light-blue);
+}
+
+.cluster-indicator {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.cluster-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Location list styling */
 .location-item {
   padding: 12px;
   border-bottom: 1px solid var(--very-light-blue);
@@ -324,39 +239,35 @@ h1 {
   margin-bottom: 5px;
 }
 
-.location-list-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #999;
-  transition: color 0.2s;
+/* InfoWindow styling */
+.gm-style .gm-style-iw-c {
+  padding: 16px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  min-width: 250px;
 }
 
-.location-list-close:hover {
-  color: var(--primary-dark);
+.gm-style .gm-style-iw-d {
+  overflow: hidden !important;
+  padding: 0 !important;
 }
 
-@media (max-width: 767px) {
-  .location-list-container {
-    width: 95%;
-    max-height: 85vh;
-  }
-  
-  .location-list-items {
-    max-height: calc(85vh - 100px);
-  }
-  
-  .location-item {
-    padding: 15px;
-  }
+.gm-style .gm-style-iw-c .gm-style-iw-d div {
+  font-size: 16px !important;
+  line-height: 1.5 !important;
 }
 
-.gm-ui-hover-effect:hover {
-  opacity: 1 !important;
+.gm-style .gm-style-iw-c .gm-style-iw-d strong {
+  font-size: 18px !important;
+  margin-bottom: 5px !important;
+  display: block !important;
+}
+
+.gm-ui-hover-effect {
+  opacity: 0.6 !important;
+  transform: scale(1.2) !important;
+  top: 2px !important;
+  right: 2px !important;
 }
 
 /* Responsive design - optimized for iPhone */
@@ -386,70 +297,97 @@ h1 {
   }
   
   h1 {
-    font-size: 1.5rem;
+    font-size: 1.8rem;
     margin-top: 10px;
   }
   
+  .logo {
+    height: 70px;
+  }
+  
   .modern-button {
-    padding: 16px 24px;
-    font-size: 1.1rem;
-    min-height: 60px;
+    padding: 20px 24px;
+    font-size: 1.2rem;
+    min-height: 70px;
     min-width: 140px;
     width: 100%;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
   }
   
   #siteCount {
-    font-size: 1.1rem;
-    padding: 12px 16px;
+    font-size: 1.2rem;
+    padding: 15px 16px;
     width: 100%;
     text-align: center;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
   }
   
-  .filter-item {
-    padding: 12px 16px;
-    margin: 8px 0;
+  .cluster-btn {
+    padding: 15px 20px;
+    margin: 5px 0;
     display: block;
     width: 100%;
     box-sizing: border-box;
+    font-size: 1.2rem;
   }
   
-  .filter-text {
-    font-size: 1.1rem;
-  }
-  
-  .filter-container {
-    max-height: 300px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .filter-button {
-    padding: 16px 20px;
-    font-size: 1.1rem;
-    min-height: 60px;
-    min-width: 140px;
-    width: 100%;
-    margin-bottom: 16px;
-  }
-  
-  .modern-checkbox {
+  .cluster-indicator {
     width: 24px;
     height: 24px;
     margin-right: 12px;
   }
   
-  .color-indicator {
-    width: 20px;
-    height: 20px;
+  .filter-container {
+    max-height: 350px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .control-button {
+    padding: 20px 24px;
+    font-size: 1.2rem;
+    min-height: 70px;
+    min-width: 140px;
+    width: 100%;
+    margin-bottom: 20px;
   }
   
   .cluster-controls {
     flex-direction: column;
     width: 100%;
+    gap: 15px;
+  }
+  
+  .cluster-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .location-item {
+    padding: 20px;
+    font-size: 1.2rem;
+  }
+  
+  .location-item strong {
+    font-size: 1.3rem;
+    margin-bottom: 8px;
+  }
+  
+  .filter-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .instruction {
+    margin-top: 10px;
+    font-size: 1rem;
+  }
+  
+  .clusters-title {
+    margin-bottom: 10px;
+    font-size: 1.3rem;
   }
 }
 
@@ -467,7 +405,7 @@ h1 {
     min-height: 20px;
   }
   
-  .modern-button, .filter-button {
+  .modern-button, .control-button {
     /* Prevent iOS rounded buttons */
     border-radius: var(--border-radius);
     -webkit-appearance: none;
@@ -485,6 +423,6 @@ h1 {
   to { opacity: 1; }
 }
 
-.filter-item, #siteCount, .modern-button {
+.control-button, .cluster-btn, #siteCount, .modern-button {
   animation: fadeIn 0.3s ease;
 }
