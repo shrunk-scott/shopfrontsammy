@@ -344,7 +344,7 @@ function optimizedEBikeClustering() {
     }
   }
   
- // Create zones for each cluster
+  // Create zones for each cluster
   createClusterZones();
 }
 
@@ -504,9 +504,10 @@ function createClusterButtons() {
     button.className = 'cluster-btn active'; // Start as active
     button.dataset.clusterId = cluster.id;
     
+    // Create a more compact layout with color indicator on top
     button.innerHTML = `
       <span class="cluster-indicator" style="background-color: ${clusterColor};"></span>
-      <span class="cluster-label">Cluster ${cluster.id} (${cluster.pointCount} sites)</span>
+      <span class="cluster-label">Cluster ${cluster.id}<br>(${cluster.pointCount})</span>
     `;
     
     // Toggle cluster visibility on click
