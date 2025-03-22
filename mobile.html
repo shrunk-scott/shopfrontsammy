@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Site Locations - Mobile</title>
+  <link rel="stylesheet" href="mobile.css">
+  <!-- Load external libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img src="https://cdn.prod.website-files.com/675a6c39b29c1466a4306560/6760fd79aa53c194bc2f4933_scroller-mascot.svg" alt="Logo" class="logo">
+      <h1>Site Locations</h1>
+    </header>
+    
+    <div id="siteCount" class="site-count">Total Sites: 0</div>
+    
+    <div class="action-buttons">
+      <button id="resetBtn" class="action-button">Reset View</button>
+    </div>
+    
+    <div class="filter-section">
+      <div class="filter-header">
+        <div class="clusters-title">Clusters:</div>
+        <div class="cluster-controls">
+          <button id="selectAllBtn" class="control-button">Select All</button>
+          <button id="selectNoneBtn" class="control-button">Select None</button>
+        </div>
+        <div class="cluster-instruction">Double-tap to view locations in a cluster</div>
+      </div>
+      
+      <div id="clusterFilter" class="filter-container">
+        <!-- Cluster buttons will be inserted here via JavaScript -->
+      </div>
+    </div>
+    
+    <div id="map" class="map-container"></div>
+  </div>
+  
+  <!-- Location list overlay (hidden by default) -->
+  <div id="locationListOverlay" class="location-overlay">
+    <div id="locationList" class="location-list">
+      <h3 id="locationListTitle" class="location-list-title">Locations</h3>
+      <div id="locationListItems" class="location-list-items"></div>
+      <button id="locationListClose" class="location-list-close">×</button>
+    </div>
+  </div>
+  
+  <!-- Load the main script -->
+  <script src="script.js"></script>
+</body>
+</html>
