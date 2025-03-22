@@ -1,38 +1,4 @@
-// No longer need this function
-// function createLocationListContainer() {
-//   // Function content removed
-// }// Function to load Font Awesome for icons
-function loadFontAwesome() {
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css';
-  document.head.appendChild(link);
-}// Function to adjust marker size based on current zoom level
-function adjustMarkersForZoom() {
-  const currentZoom = map.getZoom();
-  let markerSize;
-  
-  // Scale marker size based on zoom level
-  if (currentZoom >= 18) {
-    markerSize = 40; // Very close zoom
-  } else if (currentZoom >= 15) {
-    markerSize = 35; // Close zoom
-  } else if (currentZoom >= 12) {
-    markerSize = 30; // Medium zoom
-  } else if (currentZoom >= 9) {
-    markerSize = 25; // Far zoom
-  } else {
-    markerSize = 30; // Default size for very far zoom
-  }
-  
-  // Update all markers with new size
-  markers.forEach(marker => {
-    marker.setIcon({
-      url: "https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Shopfront%20Sammy%20Logo.png",
-      scaledSize: new google.maps.Size(markerSize, markerSize)
-    });
-  });
-}let map;
+let map;
 let markers = [];
 let infoWindows = [];
 let allLocations = [];
@@ -40,7 +6,6 @@ let clusterZones = {}; // Key: final cluster id, value: google.maps.Polygon
 let finalClusters = []; // Array of cluster objects: { id, features, centroid, radius, zoneGeoJSON }
 const defaultCenter = { lat: -27.5, lng: 153.0 };
 const defaultZoom = 7;
-// Blue color palette for clusters
 const clusterColorPalette = [
   "#1e88e5", "#0d47a1", "#64b5f6", "#5c6bc0",
   "#283593", "#1565c0", "#42a5f5", "#2962ff",
@@ -84,6 +49,11 @@ function initMap() {
     adjustMarkersForZoom();
   });
   
+  // Also adjust markers on window resize for responsive design
+  window.addEventListener('resize', function() {
+    adjustMarkersForZoom();
+  });
+  
   const resetBtn = document.getElementById('resetBtn');
   if (resetBtn) {
     resetBtn.addEventListener('click', resetView);
@@ -116,8 +86,6 @@ function initMap() {
       this.style.display = 'none';
     }
   });
-  
-  
   
   Papa.parse("https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Untitled%20Spreadsheet.csv", {
     download: true,
@@ -153,14 +121,14 @@ function addMarkers() {
     const lat = parseFloat(location.Latitude);
     const lng = parseFloat(location.Longitude);
     
-    // Initial marker size is larger now
+    // Initial marker size is larger for better mobile visibility
     let marker = new google.maps.Marker({
       position: { lat: lat, lng: lng },
       map: map,
       title: location.Name,
       icon: {
         url: "https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Shopfront%20Sammy%20Logo.png",
-        scaledSize: new google.maps.Size(30, 30)
+        scaledSize: new google.maps.Size(40, 40) // Increased marker size further
       },
       // Improve marker visibility
       optimized: false,
@@ -174,7 +142,7 @@ function addMarkers() {
     let infoWindow = new google.maps.InfoWindow();
     infoWindows.push(infoWindow);
     
-          marker.addListener("click", function() {
+    marker.addListener("click", function() {
       // Close all other info windows first
       infoWindows.forEach(iw => iw.close());
       
@@ -214,6 +182,7 @@ function clearMarkers() {
   clusterZones = {};
 }
 
+// Update reset function to work with the new buttons
 function resetView() {
   console.log("Reset view clicked");
   map.setZoom(defaultZoom);
@@ -221,9 +190,8 @@ function resetView() {
   infoWindows.forEach(iw => iw.close());
   
   // Reset cluster filters (all selected)
-  let checkboxes = document.querySelectorAll('#clusterFilter input[type="checkbox"]');
-  checkboxes.forEach(cb => { 
-    cb.checked = true; 
+  document.querySelectorAll('.cluster-btn').forEach(btn => { 
+    btn.classList.add('active');
   });
   
   // Show all cluster zones and markers
@@ -535,6 +503,7 @@ function createPolygonFromGeoJSON(geoJSON, color) {
   });
 }
 
+// This function creates an entirely new approach to cluster selection
 function updateClusterFilter() {
   let filterContainer = document.getElementById('clusterFilter');
   if (!filterContainer) {
@@ -545,89 +514,128 @@ function updateClusterFilter() {
     container.insertBefore(filterContainer, document.getElementById('map'));
   }
   
-  filterContainer.innerHTML = "<strong>Clusters: </strong>";
+  // Clear existing content completely
+  filterContainer.innerHTML = '';
   
-  // Update all info windows with final cluster information
-  updateInfoWindows();
+  // Create new filter header with title
+  const headerDiv = document.createElement('div');
+  headerDiv.className = 'filter-header';
+  headerDiv.innerHTML = '<div class="clusters-title">Clusters:</div>';
+  filterContainer.appendChild(headerDiv);
   
-  // Add "Select All/None" controls
-  let selectAllBtn = document.createElement('button');
-  selectAllBtn.textContent = "Select All";
-  selectAllBtn.className = "filter-button";
-  selectAllBtn.addEventListener('click', function() {
-    document.querySelectorAll('#clusterFilter input[type="checkbox"]').forEach(cb => {
-      cb.checked = true;
-      cb.dispatchEvent(new Event('change'));
-    });
-  });
+  // Create control buttons
+  const controlsDiv = document.createElement('div');
+  controlsDiv.className = 'cluster-controls';
   
-  let selectNoneBtn = document.createElement('button');
-  selectNoneBtn.textContent = "Select None";
-  selectNoneBtn.className = "filter-button";
-  selectNoneBtn.addEventListener('click', function() {
-    document.querySelectorAll('#clusterFilter input[type="checkbox"]').forEach(cb => {
-      cb.checked = false;
-      cb.dispatchEvent(new Event('change'));
-    });
-  });
+  const selectAllBtn = document.createElement('button');
+  selectAllBtn.textContent = 'Select All';
+  selectAllBtn.className = 'control-button';
+  selectAllBtn.id = 'selectAllBtn';
   
-  filterContainer.appendChild(selectAllBtn);
-  filterContainer.appendChild(selectNoneBtn);
-  filterContainer.appendChild(document.createElement('br'));
+  const selectNoneBtn = document.createElement('button');
+  selectNoneBtn.textContent = 'Select None';
+  selectNoneBtn.className = 'control-button';
+  selectNoneBtn.id = 'selectNoneBtn';
   
-  // Create filter items for each cluster
+  controlsDiv.appendChild(selectAllBtn);
+  controlsDiv.appendChild(selectNoneBtn);
+  headerDiv.appendChild(controlsDiv);
+  
+  // Add instruction text
+  const instructionDiv = document.createElement('div');
+  instructionDiv.className = 'cluster-instruction';
+  instructionDiv.textContent = 'Double-click to view locations in a cluster';
+  headerDiv.appendChild(instructionDiv);
+  
+  // Create cluster buttons container
+  const buttonsContainer = document.createElement('div');
+  buttonsContainer.className = 'cluster-buttons';
+  filterContainer.appendChild(buttonsContainer);
+  
+  // Create a button for each cluster
   finalClusters.forEach(cluster => {
-    let filterItem = document.createElement('div');
-    filterItem.className = 'filter-item';
+    const clusterColor = clusterColorPalette[parseInt(cluster.id) % clusterColorPalette.length];
     
-    let checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.id = 'cluster_' + cluster.id;
-    checkbox.className = 'modern-checkbox';
-    checkbox.checked = true;
-    checkbox.addEventListener('change', function() {
-      if (this.checked) {
+    const button = document.createElement('button');
+    button.className = 'cluster-btn active'; // Start as active
+    button.dataset.clusterId = cluster.id;
+    button.innerHTML = `
+      <span class="cluster-indicator" style="background-color: ${clusterColor};"></span>
+      <span class="cluster-label">Cluster ${cluster.id} (${cluster.pointCount} sites)</span>
+    `;
+    
+    button.addEventListener('click', function() {
+      // Toggle active class
+      this.classList.toggle('active');
+      const isActive = this.classList.contains('active');
+      
+      // Show/hide cluster on map
+      if (isActive) {
         if (clusterZones[cluster.id]) clusterZones[cluster.id].setMap(map);
+        markers.forEach(marker => {
+          if (marker.cluster === cluster.id) {
+            marker.setMap(map);
+          }
+        });
       } else {
         if (clusterZones[cluster.id]) clusterZones[cluster.id].setMap(null);
+        markers.forEach(marker => {
+          if (marker.cluster === cluster.id) {
+            marker.setMap(null);
+          }
+        });
       }
-      
-      markers.forEach(marker => {
-        if (marker.cluster === cluster.id) {
-          marker.setMap(this.checked ? map : null);
-        }
-      });
       
       updateSiteCount();
     });
     
-    let label = document.createElement('label');
-    label.htmlFor = checkbox.id;
-    label.className = 'filter-label';
-    
-    let colorIndicator = document.createElement('span');
-    colorIndicator.className = 'color-indicator';
-    colorIndicator.style.backgroundColor = clusterColorPalette[parseInt(cluster.id) % clusterColorPalette.length];
-    
-    let labelText = document.createElement('span');
-    labelText.textContent = `Cluster ${cluster.id} (${cluster.pointCount} sites)`;
-    labelText.className = 'filter-text';
-    labelText.addEventListener('click', function(e) {
+    // Show locations on double click
+    button.addEventListener('dblclick', function(e) {
       e.stopPropagation();
       if (clusterZones[cluster.id]) {
+        // Zoom to cluster
         let bounds = new google.maps.LatLngBounds();
         clusterZones[cluster.id].getPath().forEach(point => bounds.extend(point));
         map.fitBounds(bounds);
+        
+        // Show locations list
+        showClusterLocations(cluster.id);
       }
     });
     
-    label.appendChild(colorIndicator);
-    label.appendChild(labelText);
-    
-    filterItem.appendChild(checkbox);
-    filterItem.appendChild(label);
-    
-    filterContainer.appendChild(filterItem);
+    buttonsContainer.appendChild(button);
+  });
+  
+  // Update all info windows with final cluster information
+  updateInfoWindows();
+  
+  // Add event listeners for control buttons
+  document.getElementById('selectAllBtn').addEventListener('click', function() {
+    document.querySelectorAll('.cluster-btn').forEach(btn => {
+      btn.classList.add('active');
+      const clusterId = btn.dataset.clusterId;
+      if (clusterZones[clusterId]) clusterZones[clusterId].setMap(map);
+      markers.forEach(marker => {
+        if (marker.cluster === clusterId) {
+          marker.setMap(map);
+        }
+      });
+    });
+    updateSiteCount();
+  });
+  
+  document.getElementById('selectNoneBtn').addEventListener('click', function() {
+    document.querySelectorAll('.cluster-btn').forEach(btn => {
+      btn.classList.remove('active');
+      const clusterId = btn.dataset.clusterId;
+      if (clusterZones[clusterId]) clusterZones[clusterId].setMap(null);
+      markers.forEach(marker => {
+        if (marker.cluster === clusterId) {
+          marker.setMap(null);
+        }
+      });
+    });
+    updateSiteCount();
   });
 }
 
@@ -709,6 +717,39 @@ function showClusterLocations(clusterId) {
   overlay.style.display = 'block';
 }
 
+// Function to adjust marker size based on current zoom level
+function adjustMarkersForZoom() {
+  const currentZoom = map.getZoom();
+  let markerSize;
+  
+  // Scale marker size based on zoom level - increased sizes for better mobile visibility
+  if (currentZoom >= 18) {
+    markerSize = 50; // Very close zoom
+  } else if (currentZoom >= 15) {
+    markerSize = 45; // Close zoom
+  } else if (currentZoom >= 12) {
+    markerSize = 42; // Medium zoom
+  } else if (currentZoom >= 9) {
+    markerSize = 40; // Far zoom
+  } else {
+    markerSize = 40; // Default size for very far zoom
+  }
+  
+  // Adjust further for mobile devices
+  if (window.innerWidth <= 767) {
+    markerSize += 10; // Make markers even larger on mobile
+  }
+  
+  // Update all markers with new size
+  markers.forEach(marker => {
+    marker.setIcon({
+      url: "https://raw.githubusercontent.com/shrunk-scott/shopfrontsammy/main/Shopfront%20Sammy%20Logo.png",
+      scaledSize: new google.maps.Size(markerSize, markerSize)
+    });
+  });
+}
+
+// Function to update all info windows with the latest cluster information
 function updateInfoWindows() {
   markers.forEach((marker, index) => {
     const location = allLocations.find(loc => {
@@ -740,6 +781,14 @@ function updateInfoWindows() {
       `);
     }
   });
+}
+
+// Load Font Awesome for icons (if needed)
+function loadFontAwesome() {
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css';
+  document.head.appendChild(link);
 }
 
 window.onload = loadScript;
