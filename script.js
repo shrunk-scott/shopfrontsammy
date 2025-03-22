@@ -5,7 +5,7 @@ let allLocations = [];
 let clusterZones = {}; // Key: final cluster id, value: google.maps.Polygon
 let finalClusters = []; // Array of cluster objects: { id, features, centroid, radius, zoneGeoJSON }
 const defaultCenter = { lat: -27.5, lng: 153.0 };
-const defaultZoom = 10;
+const defaultZoom = 7;
 // Blue color palette for clusters
 const clusterColorPalette = [
   "#1e88e5", "#0d47a1", "#64b5f6", "#5c6bc0",
@@ -172,6 +172,11 @@ function updateSiteCount() {
     let visibleCount = markers.filter(marker => marker.getMap() !== null).length;
     let totalClusters = Object.keys(clusterZones).length;
     siteCountElem.textContent = `Total Sites: ${visibleCount} in ${totalClusters} clusters`;
+    
+    // Make the count more prominent on mobile
+    if (window.innerWidth <= 767) {
+      siteCountElem.style.fontWeight = '500';
+    }
   }
 }
 
@@ -588,10 +593,12 @@ function updateInfoWindows() {
       }
       
       infoWindows[index].setContent(`
-        <div style="padding: 5px;">
-          <strong>${location.Name}</strong><br>
-          ${location.Address}<br>
-          <em>${clusterColor}${clusterName}</em>
+        <div style="padding: 8px; font-size: 16px;">
+          <strong style="font-size: 18px; display: block; margin-bottom: 8px;">${location.Name}</strong>
+          <div style="margin-bottom: 8px;">${location.Address}</div>
+          <div style="display: flex; align-items: center; font-weight: 500; color: #1c1ce0;">
+            ${clusterColor}${clusterName}
+          </div>
         </div>
       `);
     }
