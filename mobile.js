@@ -19,7 +19,7 @@ const EBIKE_RANGE = 30; // Maximum e-bike range in kilometers on a single charge
 const MAX_SITES_PER_CLUSTER = 20; // Maximum sites per cluster for efficient servicing
 
 // State tracking for collapsible sections
-let isClusterPanelCollapsed = false;
+let isClusterPanelCollapsed = true; // Default collapsed state
 
 document.addEventListener('DOMContentLoaded', function() {
   initApp();
@@ -77,6 +77,26 @@ function initMap() {
   loadLocationData();
 }
 
+// Set initial collapsed state
+function setInitialClusterPanelState() {
+  // Apply collapsed state on initial load
+  const toggleBtn = document.getElementById('toggleFilterBtn');
+  const filterControls = document.getElementById('filterControls');
+  const clusterFilterContainer = document.getElementById('clusterFilterContainer');
+  const mapContainer = document.getElementById('map');
+  
+  // Set classes based on initial state
+  toggleBtn.classList.toggle('collapsed', isClusterPanelCollapsed);
+  filterControls.classList.toggle('collapsed', isClusterPanelCollapsed);
+  clusterFilterContainer.classList.toggle('collapsed', isClusterPanelCollapsed);
+  mapContainer.classList.toggle('map-expanded', isClusterPanelCollapsed);
+  
+  // Trigger map resize to ensure proper display
+  setTimeout(() => {
+    google.maps.event.trigger(map, 'resize');
+  }, 300);
+}
+
 function loadLocationData() {
   // Show loading indicator
   document.getElementById('siteCount').textContent = 'Loading data...';
@@ -100,6 +120,9 @@ function loadLocationData() {
       optimizedEBikeClustering();
       updateSiteCount();
       createClusterButtons();
+      
+      // Set initial collapsed state after everything is loaded
+      setInitialClusterPanelState();
     },
     error: function(err) {
       console.error("Error loading CSV file:", err);
