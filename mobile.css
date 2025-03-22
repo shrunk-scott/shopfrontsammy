@@ -169,6 +169,10 @@ h1 {
   background-color: rgba(0, 0, 0, 0.1);
 }
 
+.toggle-button i {
+  transition: transform 0.3s;
+}
+
 .toggle-button.collapsed i {
   transform: rotate(180deg);
 }
