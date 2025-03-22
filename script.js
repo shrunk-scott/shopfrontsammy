@@ -6,10 +6,11 @@ let clusterZones = {}; // Key: final cluster id, value: google.maps.Polygon
 let finalClusters = []; // Array of cluster objects: { id, features, centroid, radius, zoneGeoJSON }
 const defaultCenter = { lat: -27.5, lng: 153.0 };
 const defaultZoom = 7;
+// Blue color palette for clusters
 const clusterColorPalette = [
-  "#FF5733", "#33FF57", "#3357FF", "#F39C12",
-  "#8E44AD", "#16A085", "#D35400", "#27AE60",
-  "#C70039", "#900C3F", "#581845", "#1ABC9C"
+  "#1e88e5", "#0d47a1", "#64b5f6", "#5c6bc0",
+  "#283593", "#1565c0", "#42a5f5", "#2962ff",
+  "#0277bd", "#039be5", "#29b6f6", "#01579b"
 ];
 
 // E-bike specific parameters
