@@ -1,133 +1,157 @@
-/* --- CSS Reset --- */
-html, body, div, span, applet, object, iframe,
-h1, h2, h3, h4, h5, h6, p, blockquote, pre,
-a, abbr, acronym, address, big, cite, code,
-del, dfn, em, img, ins, kbd, q, s, samp,
-small, strike, strong, sub, sup, tt, var,
-b, u, i, center,
-dl, dt, dd, ol, ul, li,
-fieldset, form, label, legend,
-table, caption, tbody, tfoot, thead, tr, th, td,
-article, aside, canvas, details, embed, 
-figure, figcaption, footer, header, hgroup, 
-main, menu, nav, output, ruby, section, summary,
-time, mark, audio, video {
+/* Basic reset */
+* {
   margin: 0;
   padding: 0;
-  border: 0;
-  font-size: 100%;
-  font: inherit;
-  vertical-align: baseline;
+  box-sizing: border-box;
 }
-article, aside, details, figcaption, figure, 
-footer, header, hgroup, main, menu, nav, section {
-  display: block;
-}
+
 body {
-  line-height: 1;
-  background: #fff;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
-ol, ul {
-  list-style: none;
-}
-table {
-  border-collapse: collapse;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  background-color: #f5f5f5;
 }
 
-/* --- Container --- */
 .container {
-  max-width: 1000px;
-  margin: 20px auto;
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 20px;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-  text-align: center;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* --- Header and Logo --- */
 header {
+  display: flex;
+  align-items: center;
   margin-bottom: 20px;
 }
+
 .logo {
-  max-width: 150px;
-  display: block;
-  margin: 0 auto;
+  max-height: 60px;
+  margin-right: 20px;
 }
 
-/* --- Modern Apple-style Button --- */
-.modern-button {
-  background-color: #007aff;
-  border: none;
-  color: white;
-  padding: 10px 20px;
-  font-size: 17px;
-  font-weight: 500;
-  border-radius: 12px;
-  cursor: pointer;
-  -webkit-appearance: none;
-  transition: background-color 0.3s ease;
-  margin: 10px;
-}
-.modern-button:hover {
-  background-color: #0051a8;
+h1 {
+  color: #2c3e50;
+  margin-bottom: 15px;
+  font-weight: 600;
 }
 
-/* --- Modern Apple-style Checkbox --- */
-.modern-checkbox {
-  -webkit-appearance: none;
-  appearance: none;
-  background-color: #fff;
-  border: 1px solid #c7c7cc;
-  border-radius: 4px;
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  vertical-align: middle;
-  margin-right: 5px;
-  position: relative;
-}
-.modern-checkbox:checked {
-  background-color: #007aff;
-  border-color: #007aff;
-}
-.modern-checkbox:checked::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 6px;
-  width: 5px;
-  height: 10px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-/* --- Cluster Filter --- */
-#clusterFilter {
-  margin: 10px 0;
-  text-align: left;
-}
-#clusterFilter label {
-  margin-right: 10px;
-  font-size: 16px;
-  vertical-align: middle;
-  cursor: pointer;
-}
-
-/* --- Site Count Display --- */
-#siteCount {
-  margin: 10px 0;
-  font-size: 18px;
-  color: #333;
-}
-
-/* --- Map Container --- */
 #map {
-  height: 700px;
+  height: 600px;
   width: 100%;
-  border: 2px solid #ccc;
   border-radius: 8px;
   margin-top: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Modern button styling */
+.modern-button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+  margin-bottom: 15px;
+}
+
+.modern-button:hover {
+  background-color: #2980b9;
+}
+
+/* Site count styling */
+#siteCount {
+  background-color: #ecf0f1;
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-right: 10px;
+  margin-bottom: 15px;
+  font-weight: 500;
+}
+
+/* Filter container styling */
+.filter-container {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  border: 1px solid #e0e0e0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Checkbox styling */
+.modern-checkbox {
+  margin-right: 5px;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.filter-button {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px 10px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.filter-button:hover {
+  background-color: #e0e0e0;
+}
+
+.filter-item {
+  display: inline-block;
+  margin: 5px 10px 5px 0;
+  background-color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid #eee;
+}
+
+.filter-label {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.color-indicator {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.filter-text {
+  font-size: 13px;
+}
+
+.filter-text:hover {
+  text-decoration: underline;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+  
+  #map {
+    height: 400px;
+  }
+  
+  .filter-item {
+    margin: 4px;
+    display: block;
+  }
 }
