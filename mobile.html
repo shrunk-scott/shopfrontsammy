@@ -8,6 +8,8 @@
   <!-- Load external libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+  <!-- Add Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
 </head>
 <body>
   <div class="container">
@@ -16,24 +18,35 @@
       <h1>Site Locations</h1>
     </header>
     
-    <div id="siteCount" class="site-count">Total Sites: 0</div>
-    
-    <div class="action-buttons">
+    <div class="top-controls">
+      <div id="siteCount" class="site-count">Total Sites: 0</div>
       <button id="resetBtn" class="action-button">Reset View</button>
     </div>
     
     <div class="filter-section">
+      <!-- Collapsible header with toggle button -->
       <div class="filter-header">
-        <div class="clusters-title">Clusters:</div>
-        <div class="cluster-controls">
-          <button id="selectAllBtn" class="control-button">Select All</button>
-          <button id="selectNoneBtn" class="control-button">Select None</button>
+        <div class="filter-header-row">
+          <div class="clusters-title">Clusters:</div>
+          <button id="toggleFilterBtn" class="toggle-button">
+            <i class="fas fa-chevron-up" aria-hidden="true"></i>
+          </button>
         </div>
-        <div class="cluster-instruction">Double-tap to view locations in a cluster</div>
+        
+        <div id="filterControls" class="filter-controls-container">
+          <div class="cluster-controls">
+            <button id="selectAllBtn" class="control-button">Select All</button>
+            <button id="selectNoneBtn" class="control-button">Select None</button>
+          </div>
+          <div class="cluster-instruction">Double-tap to view locations in a cluster</div>
+        </div>
       </div>
       
-      <div id="clusterFilter" class="filter-container">
-        <!-- Cluster buttons will be inserted here via JavaScript -->
+      <!-- Collapsible content -->
+      <div id="clusterFilterContainer" class="filter-container-wrapper">
+        <div id="clusterFilter" class="filter-container">
+          <!-- Cluster buttons will be inserted here via JavaScript -->
+        </div>
       </div>
     </div>
     
