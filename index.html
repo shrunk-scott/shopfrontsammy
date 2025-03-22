@@ -7,6 +7,27 @@
   <!-- Load external libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+  
+  <!-- Mobile redirect script -->
+  <script>
+    // Function to detect mobile devices
+    function isMobileDevice() {
+      return (
+        (navigator.userAgent.match(/Android/i)) ||
+        (navigator.userAgent.match(/webOS/i)) ||
+        (navigator.userAgent.match(/iPhone/i)) ||
+        (navigator.userAgent.match(/iPad/i)) ||
+        (navigator.userAgent.match(/iPod/i)) ||
+        (navigator.userAgent.match(/BlackBerry/i)) ||
+        (navigator.userAgent.match(/Windows Phone/i))
+      );
+    }
+    
+    // Redirect mobile users to mobile.html
+    if (isMobileDevice()) {
+      window.location.href = 'mobile.html';
+    }
+  </script>
 </head>
 <body>
   <div class="container">
