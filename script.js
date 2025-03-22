@@ -5,7 +5,7 @@ let allLocations = [];
 let clusterZones = {}; // Key: final cluster id, value: google.maps.Polygon
 let finalClusters = []; // Array of cluster objects: { id, features, centroid, radius, zoneGeoJSON }
 const defaultCenter = { lat: -27.5, lng: 153.0 };
-const defaultZoom = 7;
+const defaultZoom = 10;
 // Blue color palette for clusters
 const clusterColorPalette = [
   "#1e88e5", "#0d47a1", "#64b5f6", "#5c6bc0",
