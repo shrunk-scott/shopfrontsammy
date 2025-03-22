@@ -18,6 +18,9 @@ const EBIKE_MAX_SPEED = 25; // Maximum e-bike speed in km/h
 const EBIKE_RANGE = 30; // Maximum e-bike range in kilometers on a single charge
 const MAX_SITES_PER_CLUSTER = 20; // Maximum sites per cluster for efficient servicing
 
+// State tracking for collapsible sections
+let isClusterPanelCollapsed = false;
+
 document.addEventListener('DOMContentLoaded', function() {
   initApp();
 });
@@ -28,6 +31,9 @@ function initApp() {
   document.getElementById('selectAllBtn').addEventListener('click', selectAllClusters);
   document.getElementById('selectNoneBtn').addEventListener('click', selectNoneClusters);
   document.getElementById('locationListClose').addEventListener('click', hideLocationList);
+  
+  // Add event listener for the toggle button
+  document.getElementById('toggleFilterBtn').addEventListener('click', toggleClusterPanel);
   
   // Initialize the map
   loadGoogleMaps();
@@ -100,6 +106,33 @@ function loadLocationData() {
       document.getElementById('siteCount').textContent = 'Error loading data';
     }
   });
+}
+
+// Toggle cluster panel visibility
+function toggleClusterPanel() {
+  isClusterPanelCollapsed = !isClusterPanelCollapsed;
+  
+  const toggleBtn = document.getElementById('toggleFilterBtn');
+  const filterControls = document.getElementById('filterControls');
+  const clusterFilterContainer = document.getElementById('clusterFilterContainer');
+  const mapContainer = document.getElementById('map');
+  
+  // Update toggle button icon
+  toggleBtn.classList.toggle('collapsed', isClusterPanelCollapsed);
+  
+  // Toggle visibility of filter controls
+  filterControls.classList.toggle('collapsed', isClusterPanelCollapsed);
+  
+  // Toggle visibility of cluster filter container
+  clusterFilterContainer.classList.toggle('collapsed', isClusterPanelCollapsed);
+  
+  // Adjust map size
+  mapContainer.classList.toggle('map-expanded', isClusterPanelCollapsed);
+  
+  // Trigger a resize event on the map after a short delay to ensure it properly redraws
+  setTimeout(() => {
+    google.maps.event.trigger(map, 'resize');
+  }, 300); // Match this with your CSS transition duration
 }
 
 function addMarkers() {
@@ -311,7 +344,7 @@ function optimizedEBikeClustering() {
     }
   }
   
-  // Create zones for each cluster
+ // Create zones for each cluster
   createClusterZones();
 }
 
@@ -655,6 +688,11 @@ function resetView() {
   
   // Reset cluster filters (all selected)
   selectAllClusters();
+  
+  // If clusters panel is collapsed, expand it
+  if (isClusterPanelCollapsed) {
+    toggleClusterPanel();
+  }
 }
 
 function updateSiteCount() {
